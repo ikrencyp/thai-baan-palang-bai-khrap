@@ -1,0 +1,46 @@
+# macOS
+.DS_Store
+
+# Swift and Xcode
+/.build/
+/.swiftpm/
+xcuserdata/
+DerivedData/
+
+# Build output. Installers are published as GitHub Release assets, never committed.
+/build/
+/dist/
+*.dmg
+*.sha256
+
+# Local tool state
+/.code-review-graph/
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Logs
+*.log
+
+# Secrets. Never commit these, in any folder.
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.p8
+*.pfx
+*.jks
+*.key
+*.kdbx
+*.keychain-db
+*.mobileprovision
+id_rsa
+id_ecdsa
+id_ed25519
+.netrc
+.npmrc
+credentials.json
+secrets.json

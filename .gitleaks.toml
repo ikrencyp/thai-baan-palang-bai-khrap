@@ -1,0 +1,38 @@
+title = "thai-baan-palang-bai-khrap"
+
+# The standard gitleaks rules (tokens, keys, passwords) plus three for this project.
+[extend]
+useDefault = true
+
+# A real home folder in a committed file leaks the account name. Placeholders like /Users/<you>/ do not match.
+[[rules]]
+id = "home-directory-path"
+description = "An absolute path inside a person's home folder"
+regex = '''(?:/Users|/home)/([A-Za-z0-9][A-Za-z0-9._-]{1,31})/'''
+secretGroup = 1
+keywords = ["/users/", "/home/"]
+
+[[rules.allowlists]]
+regexTarget = "match"
+regexes = ['''(?:/Users|/home)/(?:Shared|runner|user|name|you|me|jane|example)/''']
+
+# What notarizing needs: the app-specific password (xxxx-xxxx-xxxx-xxxx) and the exported certificate.
+[[rules]]
+id = "apple-app-specific-password"
+description = "An Apple app-specific password next to its variable or label"
+regex = '''(?i)(?:password|passwd|[a-z_]*_pw\b|app[- _]specific)[^\n]{0,24}?\b([a-z]{4}-[a-z]{4}-[a-z]{4}-[a-z]{4})\b'''
+secretGroup = 1
+keywords = ["password", "passwd", "_pw", "specific"]
+
+[[rules]]
+id = "developer-id-certificate"
+description = "A base64 .p12 signing certificate"
+regex = '''(?i)DEVELOPER_ID_P12(?:_BASE64)?\s*[:=]\s*['"]?([A-Za-z0-9+/=]{100,})'''
+secretGroup = 1
+keywords = ["developer_id_p12"]
+
+[[allowlists]]
+description = "Build output is not source"
+paths = [
+  '''^(dist|build|\.build)/''',
+]

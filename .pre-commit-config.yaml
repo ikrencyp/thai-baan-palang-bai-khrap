@@ -1,0 +1,41 @@
+# Install once per clone: brew install pre-commit gitleaks && make hooks
+# Skip one hook for one command (never to get past a secret finding): SKIP=swift-test git push
+default_install_hook_types: [pre-commit, pre-push]
+exclude: '^(dist|build|\.build)/'
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: detect-private-key
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=1024]
+        exclude: '^Resources/AppIcon\.icns$'
+
+  - repo: local
+    hooks:
+      # Needs gitleaks installed. Without it the hook fails, so a commit is never waved through unchecked.
+      - id: gitleaks
+        name: gitleaks on the staged changes
+        entry: gitleaks git --staged --redact --no-banner --config .gitleaks.toml
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+
+      - id: gitleaks-push
+        name: gitleaks on the commits being pushed
+        entry: gitleaks git --redact --no-banner --config .gitleaks.toml
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]
+
+      - id: swift-test
+        name: swift test (about 20 seconds)
+        entry: swift test
+        language: system
+        types: [swift]
+        pass_filenames: false
+        stages: [pre-push]

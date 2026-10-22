@@ -38,8 +38,6 @@ final class EnergyPlanTests: XCTestCase {
         XCTAssertEqual(steps.map(\.governorTick), steps.map(\.governorTick).sorted())
         XCTAssertEqual(steps.map(\.syncTick), steps.map(\.syncTick).sorted())
         XCTAssertEqual(steps.map(\.idleWatchTick), steps.map(\.idleWatchTick).sorted())
-        XCTAssertTrue(EnergyPlan.saver.coarseCountdown)
-        XCTAssertFalse(EnergyPlan.standard.coarseCountdown)
     }
 
     func testTheSafetyNetNeverWaitsLongerThanFiveSeconds() {

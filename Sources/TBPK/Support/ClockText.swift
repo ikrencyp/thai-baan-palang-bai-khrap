@@ -11,19 +11,11 @@ enum ClockText {
             : String(format: "%d:%02d", minutes, seconds)
     }
 
-    // Whole minutes, for the countdown that is redrawn once a minute: 1h 05m, 12m, <1m.
-    static func coarse(_ interval: TimeInterval) -> String {
-        let total = max(0, Int(interval.rounded(.up)))
-        guard total >= 60 else { return total == 0 ? "0m" : "<1m" }
-        let minutes = (total + 59) / 60
-        return minutes >= 60 ? String(format: "%dh %02dm", minutes / 60, minutes % 60) : "\(minutes)m"
-    }
-
-    // Seconds until the coarse text changes, so the countdown is redrawn exactly when it matters.
-    static func untilCoarseChange(_ interval: TimeInterval) -> TimeInterval {
-        let total = max(0, interval)
-        let toBoundary = total.truncatingRemainder(dividingBy: 60)
-        return total < 60 ? max(total, 0.5) : (toBoundary == 0 ? 60 : toBoundary)
+    // Seconds until the whole-second text changes: it counts up, so it changes the moment the time left falls to
+    // the next lower whole second. Waiting for exactly that moment keeps the seconds from slipping and skipping.
+    static func untilNextSecond(_ interval: TimeInterval) -> TimeInterval {
+        let fraction = max(0, interval) - max(0, interval).rounded(.down)
+        return fraction < 0.001 ? 1 : fraction
     }
 
     static func hourMinute(_ date: Date) -> String {

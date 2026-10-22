@@ -11,7 +11,9 @@ final class StatusItemController: NSObject, StatusMenuTarget {
     // Variable length: a square item clips the countdown text.
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     private var subscriptions: [AnyCancellable] = []
-    private var countdownTimer: Timer?
+    private lazy var countdown = CountdownTicker(
+        remaining: { [weak self] in self?.countdownRemaining },
+        show: { [weak self] in self.map { $0.setCountdownTitle($0.countdownTitle()) } })
     private lazy var powerObserver = SystemChangeObserver { [weak self] in self?.render() }
     private lazy var animator = StatusIconAnimator { [weak self] image in
         self?.statusItem.button?.image = image
@@ -86,7 +88,7 @@ final class StatusItemController: NSObject, StatusMenuTarget {
         animator.retarget(target, animated: StatusPreferences.showAnimation && plan.animatesTransitions)
         powerMeter.run(every: target.beating && target.awake && StatusPreferences.showAnimation ? plan.meterEvery : nil)
         setCountdownTitle(countdownTitle())
-        syncCountdownTicker()
+        countdown.sync()
     }
 
     private var runsOnBattery: Bool {
@@ -112,36 +114,16 @@ final class StatusItemController: NSObject, StatusMenuTarget {
         return label + ", running on battery"
     }
 
-    // One wake-up per change of the text: every second, or once a minute when the plan shows whole minutes.
+    // One wake-up per second, on the second, in every energy choice: a countdown that moves in steps looks broken.
     // Nothing runs while the display is asleep; waking it re-renders.
-    private func syncCountdownTicker() {
-        guard StatusPreferences.showCountdown, let expiresAt = power.expiresAt, energy.plan.isVisible else {
-            countdownTimer?.invalidate()
-            countdownTimer = nil
-            return
-        }
-        let remaining = expiresAt.timeIntervalSinceNow
-        let coarse = energy.plan.coarseCountdown
-        let delay = coarse ? ClockText.untilCoarseChange(remaining) + 0.1 : 1
-        // A render can come at any moment; a timer that is already due soon enough is left to run.
-        if let running = countdownTimer, running.isValid, running.fireDate.timeIntervalSinceNow <= delay + 0.2 { return }
-        countdownTimer?.invalidate()
-        let timer = Timer(timeInterval: delay, repeats: false) { [weak self] _ in
-            MainActor.assumeIsolated {
-                guard let self else { return }
-                self.setCountdownTitle(self.countdownTitle())
-                self.syncCountdownTicker()
-            }
-        }
-        timer.tolerance = coarse ? 1 : 0.1
-        RunLoop.main.add(timer, forMode: .common)
-        countdownTimer = timer
+    private var countdownRemaining: TimeInterval? {
+        guard StatusPreferences.showCountdown, let expiresAt = power.expiresAt, energy.plan.isVisible else { return nil }
+        return expiresAt.timeIntervalSinceNow
     }
 
     private func countdownTitle() -> String {
         guard StatusPreferences.showCountdown, let expiresAt = power.expiresAt else { return "" }
-        let remaining = expiresAt.timeIntervalSinceNow
-        return " \(energy.plan.coarseCountdown ? ClockText.coarse(remaining) : ClockText.short(remaining))"
+        return " \(ClockText.short(expiresAt.timeIntervalSinceNow))"
     }
 
     private func setCountdownTitle(_ text: String) {

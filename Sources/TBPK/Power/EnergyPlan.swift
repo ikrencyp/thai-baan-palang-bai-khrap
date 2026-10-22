@@ -19,17 +19,15 @@ struct EnergyPlan: Equatable {
     let syncTick: TimeInterval
     // The longest it waits between looks at the lid and the lock while nothing is going on.
     let idleWatchTick: TimeInterval
-    // Whole minutes in the menu bar countdown: it changes once a minute instead of once a second.
-    let coarseCountdown: Bool
     // Nobody sees the menu bar while the display is asleep, so nothing is drawn.
     let isVisible: Bool
 
     static let full = EnergyPlan(frameRate: 30, beatEvery: Heartbeat.period, governorTick: 5, syncTick: 15,
-                                 idleWatchTick: 1, coarseCountdown: false, isVisible: true)
+                                 idleWatchTick: 1, isVisible: true)
     static let standard = EnergyPlan(frameRate: 30, beatEvery: 3.6, governorTick: 15, syncTick: 30,
-                                     idleWatchTick: 2, coarseCountdown: false, isVisible: true)
+                                     idleWatchTick: 2, isVisible: true)
     static let saver = EnergyPlan(frameRate: 0, beatEvery: nil, governorTick: 30, syncTick: 60,
-                                  idleWatchTick: 5, coarseCountdown: true, isVisible: true)
+                                  idleWatchTick: 5, isVisible: true)
 
     // How often the power draw is read to shape the heartbeat; nil when there is no heartbeat to shape.
     var meterEvery: TimeInterval? {
@@ -53,7 +51,7 @@ struct EnergyPlan: Equatable {
 
     private var unseen: EnergyPlan {
         EnergyPlan(frameRate: 0, beatEvery: nil, governorTick: governorTick, syncTick: syncTick,
-                   idleWatchTick: idleWatchTick, coarseCountdown: coarseCountdown, isVisible: false)
+                   idleWatchTick: idleWatchTick, isVisible: false)
     }
 
     // The line under the menu item: what is actually happening right now.

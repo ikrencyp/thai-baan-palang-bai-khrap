@@ -22,28 +22,4 @@ final class ClockTextTests: XCTestCase {
         XCTAssertEqual(ClockText.short(1799.4), "30:00")
         XCTAssertEqual(ClockText.short(0.4), "0:01")
     }
-
-    func testCoarseTextShowsWholeMinutesRoundedUp() {
-        XCTAssertEqual(ClockText.coarse(0), "0m")
-        XCTAssertEqual(ClockText.coarse(30), "<1m")
-        XCTAssertEqual(ClockText.coarse(60), "1m")
-        XCTAssertEqual(ClockText.coarse(61), "2m")
-        XCTAssertEqual(ClockText.coarse(740), "13m")
-        XCTAssertEqual(ClockText.coarse(3540), "59m")
-        XCTAssertEqual(ClockText.coarse(3600), "1h 00m")
-        XCTAssertEqual(ClockText.coarse(3900), "1h 05m")
-        XCTAssertEqual(ClockText.coarse(-5), "0m")
-    }
-
-    func testTheCoarseTextChangesExactlyWhenAMinuteBoundaryIsCrossed() {
-        XCTAssertEqual(ClockText.untilCoarseChange(740), 20, accuracy: 1e-9)
-        XCTAssertEqual(ClockText.untilCoarseChange(720), 60, accuracy: 1e-9)
-        XCTAssertEqual(ClockText.untilCoarseChange(30), 30, accuracy: 1e-9)
-        XCTAssertEqual(ClockText.untilCoarseChange(0), 0.5, accuracy: 1e-9)
-        for remaining in [61.0, 125.5, 740, 3601] {
-            let wait = ClockText.untilCoarseChange(remaining)
-            XCTAssertNotEqual(ClockText.coarse(remaining), ClockText.coarse(remaining - wait - 0.001), "\(remaining)")
-            XCTAssertEqual(ClockText.coarse(remaining), ClockText.coarse(remaining - wait + 0.001), "\(remaining)")
-        }
-    }
 }

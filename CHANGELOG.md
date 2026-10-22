@@ -2,6 +2,10 @@
 
 Each release gets a `## x.y.z` heading and a few short `- ` lines. The update dialog shows the first four.
 
+## 1.0.3
+- Fixed the countdown beside the icon freezing and jumping: it waited a fixed second after each tick, so the time drifted and skipped; it now redraws at the moment the second changes
+- The countdown counts every second in every energy choice; Power saver and Automatic on battery used to show whole minutes that changed once a minute
+
 ## 1.0.2
 - The updater and get.sh install a release only if the maintainer signed it, so a replaced download is refused even when its checksum matches
 - Release builds run in a job with no write access, and a new structure check keeps process, network and admin code in a few named files

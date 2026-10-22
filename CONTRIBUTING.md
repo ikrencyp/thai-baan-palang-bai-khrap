@@ -55,6 +55,10 @@ build.sh  install.sh  uninstall.sh  get.sh   stay at the root: the dmg, the upda
 - A change that adds process, network or admin code outside the allowed files fails `scripts/check-structure.sh`. Moving a file onto an allowlist needs the owner's review and a reason in the commit.
 - New workflow actions and hooks are pinned to a full commit hash, with the tag in a comment.
 
+## Signed commits
+
+`main` accepts only signed commits. Sign with an SSH key: create one with `ssh-keygen -t ed25519`, add its `.pub` file on GitHub under Settings > SSH and GPG keys as a **Signing key**, then in the clone run `git config gpg.format ssh && git config user.signingkey ~/.ssh/<key>.pub && git config commit.gpgsign true`. The commit email must be a verified address of your GitHub account.
+
 ## Releasing
 
 See [docs/releasing.md](docs/releasing.md).

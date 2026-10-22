@@ -41,9 +41,12 @@ enum LeafGlyph {
         return path
     }
 
-    static func image(fill: Double, scale: Double, alpha: Double, tint: NSColor?, burst: Double = 0, glow: Double = 0) -> NSImage {
+    // `tint` colours the leaf; `glowColor` colours the flame around it (the leaf colour when nil).
+    static func image(fill: Double, scale: Double, alpha: Double, tint: NSColor?, burst: Double = 0, glow: Double = 0,
+                      glowColor: NSColor? = nil) -> NSImage {
         let image = NSImage(size: NSSize(width: side, height: side), flipped: false) { bounds in
-            draw(in: bounds, fill: fill, scale: scale, alpha: alpha, color: tint ?? .black, burst: burst, glow: tint == nil ? 0 : glow)
+            draw(in: bounds, fill: fill, scale: scale, alpha: alpha, color: tint ?? .black, flame: glowColor ?? tint ?? .black,
+                 burst: burst, glow: tint == nil ? 0 : glow)
             return true
         }
         image.isTemplate = tint == nil
@@ -56,7 +59,8 @@ enum LeafGlyph {
             .withSymbolConfiguration(configuration)
     }
 
-    private static func draw(in bounds: NSRect, fill: Double, scale: Double, alpha: Double, color: NSColor, burst: Double, glow: Double) {
+    private static func draw(in bounds: NSRect, fill: Double, scale: Double, alpha: Double, color: NSColor, flame: NSColor,
+                             burst: Double, glow: Double) {
         let charge = Transformation.charge(at: burst)
         let flash = Transformation.flash(at: burst)
         // The leaf trembles while it charges, then the aura and the sparks take over.
@@ -70,12 +74,12 @@ enum LeafGlyph {
 
         let leaf = silhouette(in: rect)
         let aura = max(glow, Transformation.aura(at: burst))
-        if aura > 0 { drawAura(in: rect, color: color, strength: min(aura, 1.4)) }
-        drawSparks(Transformation.sparks(at: burst), in: bounds, color: color)
+        if aura > 0 { drawAura(in: rect, color: flame, strength: min(aura, 1.4)) }
+        drawSparks(Transformation.sparks(at: burst), in: bounds, color: flame)
         // Charging turns the leaf white-hot before it settles into its colour.
         let hot = color.blended(withFraction: CGFloat(max(charge, flash)), of: .white) ?? color
         let ink = hot.withAlphaComponent(CGFloat(alpha))
-        let edge = glow > 0 ? (color.blended(withFraction: 0.35, of: NSColor(srgbRed: 0.55, green: 0.28, blue: 0, alpha: 1)) ?? color) : ink
+        let edge = glow > 0 ? (color.blended(withFraction: 0.3, of: .black) ?? color) : ink
         edge.withAlphaComponent(CGFloat(alpha)).setStroke()
         leaf.lineWidth = 1.3
         leaf.lineJoinStyle = .round
@@ -142,7 +146,7 @@ enum LeafGlyph {
     }
 
     private static func drawAura(in rect: NSRect, color: NSColor, strength: Double) {
-        let outer = color.blended(withFraction: 0.55, of: NSColor(srgbRed: 1, green: 0.38, blue: 0.02, alpha: 1)) ?? color
+        let outer = color.blended(withFraction: 0.2, of: NSColor(srgbRed: 1, green: 0.38, blue: 0.02, alpha: 1)) ?? color
         let flame = aura(in: rect, strength: strength)
         outer.withAlphaComponent(CGFloat(min(strength, 1) * 0.62)).setFill()
         flame.fill()

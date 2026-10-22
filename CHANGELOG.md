@@ -2,6 +2,10 @@
 
 Each release gets a `## x.y.z` heading and a few short `- ` lines. The update dialog shows the first four.
 
+## 1.0.4
+- The leaf is green while the Mac is charging and red when it is not, and the flame around it is golden in both cases
+- The same colours show in the menu header and in the How to use window
+
 ## 1.0.3
 - Fixed the countdown beside the icon freezing and jumping: it waited a fixed second after each tick, so the time drifted and skipped; it now redraws at the moment the second changes
 - The countdown counts every second in every energy choice; Power saver and Automatic on battery used to show whole minutes that changed once a minute

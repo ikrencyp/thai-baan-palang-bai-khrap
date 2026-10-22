@@ -80,3 +80,43 @@ final class LeafMotionTests: XCTestCase {
         XCTAssertLessThan(opaquePixels(half), opaquePixels(full))
     }
 }
+
+final class LeafColourTests: XCTestCase {
+    private func colours(_ image: NSImage) -> (gold: Int, green: Int, red: Int) {
+        guard let cg = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return (0, 0, 0) }
+        let rep = NSBitmapImageRep(cgImage: cg)
+        var found = (gold: 0, green: 0, red: 0)
+        for x in 0..<rep.pixelsWide {
+            for y in 0..<rep.pixelsHigh {
+                guard let c = rep.colorAt(x: x, y: y)?.usingColorSpace(.sRGB), c.alphaComponent > 0.25,
+                      c.saturationComponent > 0.35, c.brightnessComponent > 0.6 else { continue }
+                let hue = c.hueComponent
+                if (0.09...0.17).contains(hue) { found.gold += 1 }
+                if (0.30...0.45).contains(hue) { found.green += 1 }
+                if hue < 0.03 || hue > 0.97 { found.red += 1 }
+            }
+        }
+        return found
+    }
+
+    func testTheChargingLeafIsGreenInAGoldenFlame() {
+        let found = colours(LeafGlyph.image(fill: 1, scale: 1, alpha: 1, tint: StatusIconAnimator.powerGreen, glow: 1,
+                                            glowColor: StatusIconAnimator.powerGold))
+        XCTAssertGreaterThan(found.green, 10, "the leaf")
+        XCTAssertGreaterThan(found.gold, 10, "the flame")
+        XCTAssertEqual(found.red, 0)
+    }
+
+    func testTheLeafOffTheChargerIsRedInTheSameGoldenFlame() {
+        let found = colours(LeafGlyph.image(fill: 1, scale: 1, alpha: 1, tint: .systemRed, glow: 1, glowColor: StatusIconAnimator.powerGold))
+        XCTAssertGreaterThan(found.red, 10, "the leaf")
+        XCTAssertGreaterThan(found.gold, 10, "the flame")
+        XCTAssertEqual(found.green, 0)
+    }
+
+    func testWithoutAFlameColourTheFlameTakesTheLeafColour() {
+        let found = colours(LeafGlyph.image(fill: 1, scale: 1, alpha: 1, tint: .systemRed, glow: 1))
+        XCTAssertGreaterThan(found.red, 10)
+        XCTAssertEqual(found.gold, 0)
+    }
+}

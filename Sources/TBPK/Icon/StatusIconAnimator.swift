@@ -134,7 +134,9 @@ final class StatusIconAnimator {
         syncTimer()
     }
 
+    // The flame around the leaf is always golden; the leaf itself is green on the charger and red off it.
     static let powerGold = NSColor(srgbRed: 1, green: 0.8, blue: 0.1, alpha: 1)
+    static let powerGreen = NSColor(srgbRed: 0.18, green: 0.86, blue: 0.43, alpha: 1)
 
     private func beating(_ settled: Bool) -> Bool {
         animated && target.beating && target.awake && settled
@@ -165,14 +167,15 @@ final class StatusIconAnimator {
         guard look != lastLook else { return }
         lastLook = look
         applyImage(LeafGlyph.image(
-            fill: look.fill, scale: look.scale, alpha: look.alpha, tint: Self.color(look.tint), burst: look.burst, glow: look.glow))
+            fill: look.fill, scale: look.scale, alpha: look.alpha, tint: Self.color(look.tint), burst: look.burst, glow: look.glow,
+            glowColor: look.tint == .none ? nil : Self.powerGold))
     }
 
     private static func color(_ tint: Look.Tint) -> NSColor? {
         switch tint {
         case .none: return nil
         case .alert: return .systemRed
-        case .power: return powerGold
+        case .power: return powerGreen
         }
     }
 }

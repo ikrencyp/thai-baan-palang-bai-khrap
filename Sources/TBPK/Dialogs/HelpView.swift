@@ -16,9 +16,9 @@ struct HelpView: View {
                             .renderingMode(.template).foregroundStyle(Color.secondary).frame(width: 26)
                         text("Outline leaf", "Normal sleep. Nothing is held.")
                     }
-                    legend(StatusIconAnimator.powerGold, "Golden leaf in a flame, beating",
-                           "Awake. The lid can close. It lights up with a flash when you turn it on.")
-                    legend(.systemRed, "Red leaf in a flame",
+                    legend(StatusIconAnimator.powerGreen, "Green leaf in a golden flame, beating",
+                           "Awake and charging. The lid can close. It lights up with a flash when you turn it on.")
+                    legend(.systemRed, "Red leaf in a golden flame",
                            "Awake and not charging. It stays red for as long as the Mac runs on battery.")
                     HStack(spacing: 12) {
                         Image(nsImage: LeafGlyph.failureImage() ?? NSImage())
@@ -51,7 +51,7 @@ struct HelpView: View {
 
     private func legend(_ color: NSColor, _ title: String, _ detail: String) -> some View {
         HStack(spacing: 12) {
-            Image(nsImage: LeafGlyph.image(fill: 1, scale: 1, alpha: 1, tint: color, glow: 0.8)).frame(width: 26)
+            Image(nsImage: LeafGlyph.image(fill: 1, scale: 1, alpha: 1, tint: color, glow: 0.8, glowColor: StatusIconAnimator.powerGold)).frame(width: 26)
             text(title, detail)
         }
     }
@@ -59,7 +59,8 @@ struct HelpView: View {
     @ViewBuilder
     private func icon(_ symbol: String) -> some View {
         if symbol == HelpTopic.leafSymbol {
-            Image(nsImage: LeafGlyph.image(fill: 1, scale: 1, alpha: 1, tint: StatusIconAnimator.powerGold, glow: 0.8)).frame(width: 26)
+            Image(nsImage: LeafGlyph.image(fill: 1, scale: 1, alpha: 1, tint: StatusIconAnimator.powerGreen, glow: 0.8,
+                                         glowColor: StatusIconAnimator.powerGold)).frame(width: 26)
         } else {
             Image(systemName: symbol).font(.title3).foregroundStyle(Color(nsColor: StatusIconAnimator.powerGold)).frame(width: 26)
         }

@@ -33,7 +33,7 @@ Open Terminal and paste this:
 curl -fsSL https://raw.githubusercontent.com/ikrencyp/thai-baan-palang-bai-khrap/main/get.sh | bash
 ```
 
-It downloads the latest version, checks the file is not damaged, puts the app in Applications and opens it. The script is short, so read [get.sh](get.sh) first if you like.
+It downloads the latest version, checks the file is not damaged and was signed by the maintainer, puts the app in Applications and opens it. The script is short, so read [get.sh](get.sh) first if you like.
 
 Why Terminal? The app is not signed with a paid Apple certificate, so macOS complains about files downloaded in a browser. A file downloaded with `curl` does not get that complaint.
 

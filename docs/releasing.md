@@ -23,9 +23,15 @@ The `Release` workflow then checks the tag matches `VERSION` and sits on `main`,
 By hand instead: `./build.sh`, then
 `gh release create v<x.y.z> dist/TBPK-<x.y.z>.dmg dist/TBPK-<x.y.z>.dmg.sha256 --notes-file notes.md`.
 
+Then sign it on your own Mac: `scripts/sign-release.sh <x.y.z>`. It downloads the published dmg, shows its SHA-256 (compare it with the hash in the summary of the Release workflow run), signs it with `~/.ssh/tbpk_release_ed25519` and uploads `TBPK-<x.y.z>.dmg.sig`. Until that file is attached the app and `get.sh` do not offer the release.
+
 The publish step runs in the `release` environment. Create it under Settings > Environments and add yourself as a required reviewer, and every release waits for your approval. Protect the `v*` tags too (Settings > Rules), so a published tag cannot be moved.
 
-## Signing
+## The release signing key
+
+`~/.ssh/tbpk_release_ed25519` signs every release. Its public half is in `Sources/TBPK/Update/ReleaseSignature.swift` (raw bytes) and `get.sh` (OpenSSH form); a unit test checks they are the same key. Keep a copy of the private key somewhere offline, and give it a passphrase (`ssh-keygen -p -f ~/.ssh/tbpk_release_ed25519`). If the key is lost or leaks, make a new one, put its public half in both places, and ship a release signed with the old key that carries the new one. Releases made before the change keep working for the apps that already trust the old key.
+
+## Signing the app for macOS
 
 Without a paid Apple Developer account the app is signed only "ad-hoc". macOS then blocks a dmg downloaded in a browser until `install.sh` or `xattr -dr com.apple.quarantine` clears the quarantine label. The `get.sh` one-liner avoids that, because `curl` does not add the label.
 

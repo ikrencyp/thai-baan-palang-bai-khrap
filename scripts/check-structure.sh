@@ -40,7 +40,10 @@ confine "asks for admin rights or touches sudoers" 'administrator privileges|osa
   Power/PrivilegedShell.swift Power/ElevatedInstallCommand.swift
 
 # Loading or hiding code at run time. The app has no use for any of it.
-confine "dynamic code or obfuscation" 'dlopen|dlsym|NSClassFromString|@_silgen_name|@_cdecl|unsafeBitCast|NSAppleScript|JavaScriptCore|import WebKit|WKWebView|Bundle\(path:|\.load\(\)|base64Encoded|Data\(base64|NSExpression'
+confine "dynamic code or obfuscation" 'dlopen|dlsym|NSClassFromString|@_silgen_name|@_cdecl|unsafeBitCast|NSAppleScript|JavaScriptCore|import WebKit|WKWebView|Bundle\(path:|\.load\(\)|NSExpression'
+
+# Base64 decoding hides payloads, so only the release signature check, which has to read the key and the armored signature, may do it.
+confine "base64 decoding" 'base64Encoded|Data\(base64' Update/ReleaseSignature.swift
 
 # The one key-value-coding call for the menu subtitle, which older SDKs cannot compile directly.
 confine "selector chosen by name" 'NSSelectorFromString' Menu/MenuParts.swift

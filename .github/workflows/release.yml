@@ -55,6 +55,10 @@ jobs:
           echo "NOTARY_PROFILE=tbpk-notary" >> "$GITHUB_ENV"
       - name: Build
         run: ./build.sh
+      - name: Show the dmg hash for signing
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          shasum -a 256 "dist/TBPK-$VERSION.dmg" | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Write the release notes
         run: |
           VERSION="${GITHUB_REF_NAME#v}"

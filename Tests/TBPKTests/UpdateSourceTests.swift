@@ -16,7 +16,7 @@ final class UpdateSourceTests: XCTestCase {
 
     private func release(tag: String = "v1.2.0", draft: Bool = false, prerelease: Bool = false, body: String = "- new thing",
                          assets: [String]? = nil) -> Data {
-        let names = assets ?? ["TBPK-1.2.0.dmg", "TBPK-1.2.0.dmg.sha256"]
+        let names = assets ?? ["TBPK-1.2.0.dmg", "TBPK-1.2.0.dmg.sha256", "TBPK-1.2.0.dmg.sig"]
         let list = names.map { "{\"name\":\"\($0)\",\"browser_download_url\":\"https://github.com/ikrencyp/thai-baan-palang-bai-khrap/releases/download/\(tag)/\($0)\"}" }
         return Data("""
         {"tag_name":"\(tag)","body":"\(body)","draft":\(draft),"prerelease":\(prerelease),"assets":[\(list.joined(separator: ","))]}
@@ -30,6 +30,7 @@ final class UpdateSourceTests: XCTestCase {
         XCTAssertEqual(latest.notes, "• new thing")
         XCTAssertEqual(latest.dmg.lastPathComponent, "TBPK-1.2.0.dmg")
         XCTAssertEqual(latest.checksum.lastPathComponent, "TBPK-1.2.0.dmg.sha256")
+        XCTAssertEqual(latest.signature.lastPathComponent, "TBPK-1.2.0.dmg.sig")
     }
 
     func testDraftsPreReleasesOddTagsAndMissingAssetsAreNotOffered() {
@@ -38,7 +39,8 @@ final class UpdateSourceTests: XCTestCase {
         XCTAssertEqual(UpdateSource.parse(release(tag: "tbpk-v1.2.0")), .noRelease)
         XCTAssertEqual(UpdateSource.parse(release(tag: "vnext")), .noRelease)
         XCTAssertEqual(UpdateSource.parse(release(assets: ["TBPK-1.2.0.dmg"])), .noRelease, "no checksum, no update")
-        XCTAssertEqual(UpdateSource.parse(release(assets: ["TBPK-9.9.9.dmg", "TBPK-9.9.9.dmg.sha256"])), .noRelease)
+        XCTAssertEqual(UpdateSource.parse(release(assets: ["TBPK-1.2.0.dmg", "TBPK-1.2.0.dmg.sha256"])), .noRelease, "no signature, no update")
+        XCTAssertEqual(UpdateSource.parse(release(assets: ["TBPK-9.9.9.dmg", "TBPK-9.9.9.dmg.sha256", "TBPK-9.9.9.dmg.sig"])), .noRelease)
         XCTAssertEqual(UpdateSource.parse(Data("not json".utf8)), .unreachable)
     }
 
@@ -104,7 +106,10 @@ final class UpdateSourceTests: XCTestCase {
 
     func testAVerifiedDownloadHoldsTheDmgAndTheScriptsLiftedOutOfIt() async throws {
         let dmg = try makeDmg(version: "1.2.0")
-        let found = await UpdateSource.fetch(latest(dmg: dmg, checksum: try checksum(of: dmg, name: "TBPK-1.2.0.dmg")), in: workspace)
+        let fixture = try SigningFixture(in: workspace)
+        try fixture.sign(dmg, namespace: "tbpk-release-1.2.0")
+        let found = await UpdateSource.fetch(latest(dmg: dmg, checksum: try checksum(of: dmg, name: "TBPK-1.2.0.dmg")), in: workspace,
+                                             key: fixture.publicKey)
         let checkout = try XCTUnwrap(found)
         defer { checkout.remove() }
         XCTAssertNotNil(checkout.installer(for: AppVersion("1.2.0")!))
@@ -119,6 +124,23 @@ final class UpdateSourceTests: XCTestCase {
         let base = workspace.appendingPathComponent("downloads")
         let found = await UpdateSource.fetch(latest(dmg: dmg, checksum: wrong), in: base)
         XCTAssertNil(found)
+        XCTAssertEqual((try? FileManager.default.contentsOfDirectory(atPath: base.path))?.count ?? 0, 0)
+    }
+
+    func testADmgWithNoSignatureOrASignatureFromAnotherKeyOrVersionIsRefusedAndNothingIsLeftBehind() async throws {
+        let dmg = try makeDmg(version: "1.2.0")
+        let sum = try checksum(of: dmg, name: "TBPK-1.2.0.dmg")
+        let fixture = try SigningFixture(in: workspace)
+        let stranger = try SigningFixture(in: workspace)
+        let base = workspace.appendingPathComponent("downloads")
+        let none = await UpdateSource.fetch(latest(dmg: dmg, checksum: sum), in: base, key: fixture.publicKey)
+        XCTAssertNil(none, "no .sig file")
+        try stranger.sign(dmg, namespace: "tbpk-release-1.2.0")
+        let wrongKey = await UpdateSource.fetch(latest(dmg: dmg, checksum: sum), in: base, key: fixture.publicKey)
+        XCTAssertNil(wrongKey, "signed by someone else")
+        try fixture.sign(dmg, namespace: "tbpk-release-1.1.0")
+        let wrongVersion = await UpdateSource.fetch(latest(dmg: dmg, checksum: sum), in: base, key: fixture.publicKey)
+        XCTAssertNil(wrongVersion, "an old release's signature")
         XCTAssertEqual((try? FileManager.default.contentsOfDirectory(atPath: base.path))?.count ?? 0, 0)
     }
 

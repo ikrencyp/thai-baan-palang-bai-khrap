@@ -2,7 +2,8 @@ import CryptoKit
 import Foundation
 
 // The newest GitHub Release of the project: one small request to the releases API. Installing downloads the
-// dmg of that release and checks it against the SHA-256 file published beside it.
+// dmg of that release, checks it against the SHA-256 file published beside it (a damaged download) and against the
+// maintainer's signature file (a release nobody but the maintainer made).
 enum UpdateSource {
     static let repository = "ikrencyp/thai-baan-palang-bai-khrap"
 
@@ -18,6 +19,9 @@ enum UpdateSource {
         let notes: String?
         let dmg: URL
         let checksum: URL
+
+        // Published beside the dmg as TBPK-<x.y.z>.dmg.sig; parse only offers a release that has it.
+        var signature: URL { dmg.appendingPathExtension("sig") }
     }
 
     enum Lookup: Equatable {
@@ -55,7 +59,8 @@ enum UpdateSource {
         let urls = Dictionary(payload.assets.compactMap { asset in URL(string: asset.browser_download_url).map { (asset.name, $0) } },
                               uniquingKeysWith: { first, _ in first })
         guard let dmg = urls["TBPK-\(version.text).dmg"], let checksum = urls["TBPK-\(version.text).dmg.sha256"],
-              isTrusted(dmg), isTrusted(checksum) else { return .noRelease }
+              let signature = urls["TBPK-\(version.text).dmg.sig"],
+              isTrusted(dmg), isTrusted(checksum), isTrusted(signature) else { return .noRelease }
         return .found(Latest(version: version, tag: payload.tag_name, notes: payload.body.flatMap { ReleaseNotes.summary(ofReleaseBody: $0) },
                              dmg: dmg, checksum: checksum))
     }
@@ -69,9 +74,10 @@ enum UpdateSource {
         return url.path.hasPrefix("/\(repository)/releases/download/")
     }
 
-    // Downloads the dmg and its checksum, refuses a dmg that does not match, and lifts `install.sh` out of the dmg
+    // Downloads the dmg, its checksum and its signature, refuses a dmg that does not match either, and lifts `install.sh` out of the dmg
     // so the finished folder looks like the one install.sh expects.
-    static func fetch(_ latest: Latest, in base: URL = FileManager.default.temporaryDirectory) async -> ReleaseCheckout? {
+    static func fetch(_ latest: Latest, in base: URL = FileManager.default.temporaryDirectory,
+                      key: Data = ReleaseSignature.trustedKey) async -> ReleaseCheckout? {
         let root = base.appendingPathComponent("tbpk-update-\(UUID().uuidString)")
         let dist = root.appendingPathComponent("dist")
         let dmgFile = dist.appendingPathComponent("TBPK-\(latest.version.text).dmg")
@@ -80,7 +86,13 @@ enum UpdateSource {
             try await download(latest.dmg, to: dmgFile)
             let (sum, sumResponse) = try await URLSession.shared.data(from: latest.checksum)
             if let http = sumResponse as? HTTPURLResponse, http.statusCode != 200 { throw URLError(.badServerResponse) }
-            guard try matches(Data(contentsOf: dmgFile), checksumFile: String(decoding: sum, as: UTF8.self)) else { throw CocoaError(.fileReadCorruptFile) }
+            let bytes = try Data(contentsOf: dmgFile)
+            guard matches(bytes, checksumFile: String(decoding: sum, as: UTF8.self)) else { throw CocoaError(.fileReadCorruptFile) }
+            let (signature, signatureResponse) = try await URLSession.shared.data(from: latest.signature)
+            if let http = signatureResponse as? HTTPURLResponse, http.statusCode != 200 { throw URLError(.badServerResponse) }
+            guard ReleaseSignature.isValid(String(decoding: signature, as: UTF8.self), for: bytes, version: latest.version, key: key) else {
+                throw CocoaError(.fileReadCorruptFile)
+            }
             try liftScripts(from: dmgFile, to: root)
             return ReleaseCheckout(root: root)
         } catch {

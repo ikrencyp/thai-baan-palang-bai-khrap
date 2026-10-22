@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# One-line installer: downloads the newest GitHub Release with curl, checks its SHA-256, installs it.
+# One-line installer: downloads the newest GitHub Release with curl, checks its SHA-256 and the maintainer's signature, installs it.
 #   curl -fsSL https://raw.githubusercontent.com/ikrencyp/thai-baan-palang-bai-khrap/main/get.sh | bash
 # A file fetched by curl carries no quarantine flag, so macOS Gatekeeper has nothing to block and the
 # app opens without a warning even though it is not notarized. Extra arguments go to install.sh
@@ -7,6 +7,8 @@
 set -euo pipefail
 
 REPO="${TBPK_REPO:-ikrencyp/thai-baan-palang-bai-khrap}"
+# The public half of the release signing key (the app carries the same key in Update/ReleaseSignature.swift).
+SIGNING_KEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEJ6YOG9yBoPQlM2hyg5tXeOczzf/z8ciUDc9z9IfZEt"
 API="${TBPK_RELEASE_API:-https://api.github.com/repos/$REPO/releases/latest}"
 
 # HTTPS only, unless a test points the script at local files.
@@ -35,6 +37,12 @@ expected=$(awk '{print tolower($1); exit}' "$WORK/TBPK-$VERSION.dmg.sha256")
 actual=$(shasum -a 256 "$WORK/TBPK-$VERSION.dmg" | awk '{print $1}')
 [ -n "$expected" ] && [ "$expected" = "$actual" ] || { echo "Checksum does not match: the download is not installed." >&2; exit 1; }
 echo "Checksum ok."
+
+curl "${CURL_FLAGS[@]}" "$BASE/TBPK-$VERSION.dmg.sig" -o "$WORK/TBPK-$VERSION.dmg.sig" || { echo "This release has no signature (TBPK-$VERSION.dmg.sig): the download is not installed." >&2; exit 1; }
+printf 'tbpk-release namespaces="tbpk-release-%s" %s\n' "$VERSION" "$SIGNING_KEY" > "$WORK/allowed-signers"
+/usr/bin/ssh-keygen -Y verify -f "$WORK/allowed-signers" -I tbpk-release -n "tbpk-release-$VERSION" -s "$WORK/TBPK-$VERSION.dmg.sig" < "$WORK/TBPK-$VERSION.dmg" >/dev/null 2>&1 \
+  || { echo "The signature does not match the maintainer's key: the download is not installed." >&2; exit 1; }
+echo "Signature ok."
 
 MOUNT="$WORK/mount"
 mkdir "$MOUNT"

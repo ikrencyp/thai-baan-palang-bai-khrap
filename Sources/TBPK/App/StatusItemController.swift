@@ -6,6 +6,7 @@ final class StatusItemController: NSObject, StatusMenuTarget {
     private let power: PowerManager
     private let watch: UnattendedWatch
     private let energy = EnergyMonitor.shared
+    private let powerMeter = PowerDrawMeter()
     weak var governor: AwakeGovernor?
     // Variable length: a square item clips the countdown text.
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -36,6 +37,7 @@ final class StatusItemController: NSObject, StatusMenuTarget {
         ]
         powerObserver.start()
         UpdateCoordinator.shared.onChange = { [weak self] in self?.render() }
+        powerMeter.onChange = { [weak self] in self?.render() }
         render()
     }
 
@@ -80,7 +82,9 @@ final class StatusItemController: NSObject, StatusMenuTarget {
         updateBadge.isHidden = pendingUpdate == nil
         statusItem.button?.toolTip = toolTip()
         let plan = energy.plan
-        animator.retarget(iconTarget(plan), animated: StatusPreferences.showAnimation && plan.animatesTransitions)
+        let target = iconTarget(plan)
+        animator.retarget(target, animated: StatusPreferences.showAnimation && plan.animatesTransitions)
+        powerMeter.run(every: target.beating && target.awake && StatusPreferences.showAnimation ? plan.meterEvery : nil)
         setCountdownTitle(countdownTitle())
         syncCountdownTicker()
     }
@@ -97,7 +101,8 @@ final class StatusItemController: NSObject, StatusMenuTarget {
             failed: icon == .failed,
             alerting: watch.isAlerting || runsOnBattery,
             beating: icon.isPulsing && plan.beatEvery != nil,
-            beatEvery: plan.beatEvery ?? Heartbeat.period
+            beatEvery: plan.beatEvery ?? Heartbeat.period,
+            intensity: powerMeter.level
         )
     }
 

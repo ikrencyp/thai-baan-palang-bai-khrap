@@ -9,7 +9,8 @@ macOS 13 or newer with Xcode or the Command Line Tools.
 ```bash
 make test       # unit tests
 make build      # tests, universal build, dist/TBPK-<version>.dmg and .sha256
-make check      # shellcheck and unit tests (needs: brew install shellcheck). CI also runs gitleaks
+make check      # shellcheck, the structure guard and unit tests (needs: brew install shellcheck). CI also runs gitleaks
+make structure  # only the structure guard: process, network and admin code stay in their named files
 make help       # every target
 ```
 
@@ -50,6 +51,9 @@ build.sh  install.sh  uninstall.sh  get.sh   stay at the root: the dmg, the upda
 - One class, struct or enum per file, in `Sources/` and `Tests/`, named after the type. Small helper types nested inside a type may stay with it.
 - Commit messages are one line: `type(scope): short description`.
 - Changing behaviour means updating `CHANGELOG.md`, `README.md` and `docs/` in the same change.
+
+- A change that adds process, network or admin code outside the allowed files fails `scripts/check-structure.sh`. Moving a file onto an allowlist needs the owner's review and a reason in the commit.
+- New workflow actions and hooks are pinned to a full commit hash, with the tag in a comment.
 
 ## Releasing
 

@@ -7,4 +7,5 @@ struct IconTarget: Equatable {
     var alerting: Bool
     var beating: Bool
     var beatEvery: TimeInterval = Heartbeat.period
+    var intensity: Double = PowerIntensity.unknown
 }

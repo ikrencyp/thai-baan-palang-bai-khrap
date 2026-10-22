@@ -1,0 +1,10 @@
+# Branch protection with "Require review from Code Owners" makes these reviews mandatory (see SECURITY.md).
+* @ikrencyp
+/.github/ @ikrencyp
+/scripts/ @ikrencyp
+/Sources/TBPK/Update/ @ikrencyp
+/Sources/TBPK/Power/ @ikrencyp
+/*.sh @ikrencyp
+/Package.swift @ikrencyp
+/.pre-commit-config.yaml @ikrencyp
+/.gitleaks.toml @ikrencyp

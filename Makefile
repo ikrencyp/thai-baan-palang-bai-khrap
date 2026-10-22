@@ -1,5 +1,5 @@
 # Shortcuts. Everything here is also runnable directly (see the scripts).
-.PHONY: help test build install uninstall icon clean dist hooks lint check version
+.PHONY: help test build install uninstall icon clean dist hooks lint structure check version
 
 help:        ## list targets
 	@grep -E '^[a-z-]+:.*##' Makefile | sed 's/:.*##/	/'
@@ -13,8 +13,12 @@ test:        ## unit tests only (swift test)
 lint:        ## shellcheck on every shell script
 	shellcheck -S warning ./*.sh scripts/*.sh
 
-check:       ## what CI runs: shellcheck and unit tests
+structure:   ## confirm dangerous code (process, network, admin) sits only in its named files
+	./scripts/check-structure.sh
+
+check:       ## what CI runs: shellcheck, the structure guard and unit tests
 	$(MAKE) lint
+	$(MAKE) structure
 	swift test
 
 build:       ## tests, universal build, sign, dist/TBPK-<version>.dmg and its .sha256

@@ -2,6 +2,11 @@
 
 Each release gets a `## x.y.z` heading and a few short `- ` lines. The update dialog shows the first four.
 
+## 1.0.1
+- One Alerts menu: when it fires (lid and lock, how often, which power) and what it sounds like (sound, play count, volume) are in the same place
+- The Alert sound menu stands alone only on a Mac where lid and lock detection is not available
+- A structure check in CI keeps process, network and admin code in a few named files, and pins every workflow action to a commit hash
+
 ## 1.0.0
 - First public release: a menu bar switch that keeps your Mac awake with the lid shut or the screen locked
 - Stay awake for a set time, until a date and time, or until you turn it off. Quitting puts normal sleep back

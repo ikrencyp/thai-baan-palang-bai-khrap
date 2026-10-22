@@ -31,6 +31,12 @@ struct EnergyPlan: Equatable {
     static let saver = EnergyPlan(frameRate: 0, beatEvery: nil, governorTick: 30, syncTick: 60,
                                   idleWatchTick: 5, coarseCountdown: true, isVisible: true)
 
+    // How often the power draw is read to shape the heartbeat; nil when there is no heartbeat to shape.
+    var meterEvery: TimeInterval? {
+        guard let beatEvery else { return nil }
+        return beatEvery <= Heartbeat.period ? 2 : 4
+    }
+
     var animatesTransitions: Bool { frameRate > 0 }
 
     static func resolve(_ profile: EnergyProfile, _ conditions: Conditions) -> EnergyPlan {

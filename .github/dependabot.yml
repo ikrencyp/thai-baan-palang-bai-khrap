@@ -1,0 +1,7 @@
+# Keeps the pinned action hashes current; each bump arrives as a pull request to review.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

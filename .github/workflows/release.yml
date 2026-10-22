@@ -1,28 +1,36 @@
 name: Release
 
 # Push a tag like v1.0.0 to build the dmg and publish it as a GitHub Release.
-# The tag must match the VERSION file. For a notarized build, add the secrets
-# described in docs/releasing.md; without them the dmg is ad-hoc signed.
+# The tag must match the VERSION file and point at a commit that is on main.
+# The build job runs the repository's scripts and has no write access. Only the publish job can create the
+# release, and it waits for a reviewer when the "release" environment requires one (see docs/releasing.md).
+# For a notarized build, add the secrets described in docs/releasing.md; without them the dmg is ad-hoc signed.
 on:
   push:
     tags: ["v*"]
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  release:
+  build:
     runs-on: macos-14
     env:
       # Only a yes or no is shared with every step, never the secret itself.
       HAS_CERT: ${{ secrets.DEVELOPER_ID_P12 != '' }}
     steps:
-      - uses: actions/checkout@v4
-      - name: Check the tag matches the VERSION file
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Check the tag matches the VERSION file and sits on main
         run: |
           want="${GITHUB_REF_NAME#v}"
           have="$(tr -d '[:space:]' < VERSION)"
           [ "$want" = "$have" ] || { echo "tag $want but VERSION says $have"; exit 1; }
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main || { echo "tag $GITHUB_REF_NAME is not on main"; exit 1; }
+      - name: Check the structure
+        run: ./scripts/check-structure.sh
       - name: Import signing certificate
         if: env.HAS_CERT == 'true'
         env:
@@ -47,11 +55,33 @@ jobs:
           echo "NOTARY_PROFILE=tbpk-notary" >> "$GITHUB_ENV"
       - name: Build
         run: ./build.sh
+      - name: Write the release notes
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          awk -v v="$VERSION" '$0 ~ "^## " v {f=1; next} /^## /{f=0} f' CHANGELOG.md > dist/notes.md
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release
+          path: |
+            dist/TBPK-*.dmg
+            dist/TBPK-*.dmg.sha256
+            dist/notes.md
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release
       - name: Publish
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
-          awk -v v="$VERSION" '$0 ~ "^## " v {f=1; next} /^## /{f=0} f' CHANGELOG.md > notes.md
-          gh release create "$GITHUB_REF_NAME" "dist/TBPK-$VERSION.dmg" "dist/TBPK-$VERSION.dmg.sha256" \
-            --title "$GITHUB_REF_NAME" --notes-file notes.md
+          gh release create "$GITHUB_REF_NAME" "TBPK-$VERSION.dmg" "TBPK-$VERSION.dmg.sha256" \
+            --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" --notes-file notes.md

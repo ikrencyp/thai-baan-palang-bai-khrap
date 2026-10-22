@@ -18,10 +18,12 @@ It lives in three places. A unit test fails if they disagree:
 2. Run `make check`, commit, push to `main`.
 3. Run `git tag v<x.y.z> && git push origin v<x.y.z>`.
 
-The `Release` workflow then checks the tag matches `VERSION`, builds, and publishes `TBPK-<x.y.z>.dmg` and `TBPK-<x.y.z>.dmg.sha256` with the changelog as notes. The updater and `get.sh` need both files, with exactly those names.
+The `Release` workflow then checks the tag matches `VERSION` and sits on `main`, runs the structure guard, builds, and publishes `TBPK-<x.y.z>.dmg` and `TBPK-<x.y.z>.dmg.sha256` with the changelog as notes. The updater and `get.sh` need both files, with exactly those names.
 
 By hand instead: `./build.sh`, then
 `gh release create v<x.y.z> dist/TBPK-<x.y.z>.dmg dist/TBPK-<x.y.z>.dmg.sha256 --notes-file notes.md`.
+
+The publish step runs in the `release` environment. Create it under Settings > Environments and add yourself as a required reviewer, and every release waits for your approval. Protect the `v*` tags too (Settings > Rules), so a published tag cannot be moved.
 
 ## Signing
 

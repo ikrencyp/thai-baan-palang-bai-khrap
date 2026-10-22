@@ -13,7 +13,7 @@ final class MenuTests: XCTestCase {
 
     private func alertsMenu() throws -> NSMenu {
         let parent = AlertsMenu.item(power: PowerManager.shared, watch: UnattendedWatch(power: PowerManager.shared), target: target)
-        return try submenu(parent, titled: "Lid & lock alerts")
+        return try submenu(parent, titled: "Alerts")
     }
 
     func testTheAlertsSubmenuLeadsWithWhatTheAppReadsRightNow() throws {
@@ -33,6 +33,11 @@ final class MenuTests: XCTestCase {
         let powers = Set(PowerCondition.allCases.map(\.label))
         XCTAssertEqual(items.filter { modes.contains($0.title) && $0.state == .on }.count, 1)
         XCTAssertEqual(items.filter { powers.contains($0.title) && $0.state == .on }.count, 1)
+    }
+
+    func testTheAlertsMenuHoldsTheSoundCountAndVolumeToo() throws {
+        let titles = try alertsMenu().items.map(\.title)
+        for expected in ["Sound", "Play how many times", "Alert volume"] { XCTAssertTrue(titles.contains(expected), expected) }
     }
 
     func testTheSoundMenuHasChoicesCountAndVolumeAndNoSecondTestEntry() throws {
@@ -144,7 +149,7 @@ final class MenuTests: XCTestCase {
         let titles = menu.items.map(\.title).filter { !$0.isEmpty }
         XCTAssertEqual(titles.suffix(5), ["How to use", "What\u{2019}s new", "About Thai Baan Palang Bai Khrap", "Check for updates…", "Quit"])
         XCTAssertTrue(titles.contains("Stay awake for"))
-        XCTAssertTrue(titles.contains("Alert sound"))
+        XCTAssertTrue(titles.contains(UnattendedWatch.isAvailable ? "Alerts" : "Alert sound"))
         XCTAssertTrue(titles.contains("Power rules"))
         XCTAssertTrue(titles.contains("Settings"))
         XCTAssertNotNil(menu.items.first?.view, "the header is a custom view")

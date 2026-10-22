@@ -17,6 +17,16 @@ enum SoundMenu {
         return parent
     }
 
+    // The sound rows when they sit inside another menu (Alerts): the choices fold into one "Sound" row, so the count and
+    // the volume stay one click away. `group` is shared with the host menu so its own lines refresh with every pick.
+    static func rows(target: StatusMenuTarget, group: SoundMenuRefresher) -> [NSMenuItem] {
+        let choices = NSMenu()
+        addChoices(to: choices, target: target, group: group)
+        let sound = MenuParts.parent("Sound", symbol: "music.note", subtitle: AlertSound.stored.displayName, submenu: choices)
+        group.add { MenuParts.setSubtitle(AlertSound.stored.displayName, on: sound) }
+        return [sound, beepCount(target: target, group: group), volume(target: target)]
+    }
+
     static func percentText(_ level: Float32) -> String {
         "\(Int((level * 100).rounded()))%"
     }

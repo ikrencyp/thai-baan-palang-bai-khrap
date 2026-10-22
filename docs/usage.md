@@ -15,7 +15,11 @@ The window tells you in plain words what will happen, for example "Tomorrow 08:0
 
 The three lengths you pick most often show up under **Often used**, so one click repeats them. **Clear often used** wipes the list.
 
-## Lid and lock alerts
+## Alerts
+
+One menu holds both halves of the alert: when it fires, and what it sounds like. On a Mac without lid and lock detection the sound settings stand alone under **Alert sound**.
+
+### When it fires
 
 Here is the usual accident: you turn it on, drop the Mac in your bag, and it runs until the battery is flat. The alert is there to stop that. It plays a sound when all three of these are true:
 
@@ -27,9 +31,9 @@ If you close the lid while a monitor is plugged in, that is normal desk use, so 
 
 Lifting the lid for a quick look does not set it off, because it waits a moment first. **How often**: Once (the default), Off, or every 5, 15 or 30 minutes. The app also writes down what happened (for example "Lid closed 14:32 on battery"), so you can read it later even if the battery died.
 
-## Alert sound
+### What it sounds like
 
-You can pick from two lists:
+Open **Sound** to pick from two lists:
 
 - **My sounds**: your own files (AIFF, WAV, MP3, M4A, AAC or CAF, up to 30 seconds each). **Add sound files...** copies them into the app's folder, so the originals can move or go.
 - **Mac sounds**: the system alert (the default) and the sounds already on your Mac.

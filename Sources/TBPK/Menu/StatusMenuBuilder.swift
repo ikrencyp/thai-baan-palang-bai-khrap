@@ -13,10 +13,10 @@ enum StatusMenuBuilder {
         if updateReady { update.map(menu.addItem) }
 
         menu.addItem(.separator())
-        if UnattendedWatch.isAvailable {
-            menu.addItem(AlertsMenu.item(power: power, watch: watch, target: target))
-        }
-        menu.addItem(SoundMenu.item(target: target))
+        // Without lid and lock detection only the battery rules can sound the alert, so the sound stands on its own.
+        menu.addItem(UnattendedWatch.isAvailable
+            ? AlertsMenu.item(power: power, watch: watch, target: target)
+            : SoundMenu.item(target: target))
         menu.addItem(PowerRulesMenu.item(target: target))
         menu.addItem(SettingsMenu.item(target: target))
 

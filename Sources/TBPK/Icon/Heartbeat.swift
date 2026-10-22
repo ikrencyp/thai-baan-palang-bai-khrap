@@ -12,6 +12,19 @@ enum Heartbeat {
         1 + 0.28 * pulse(at: time)
     }
 
+    // The heartbeat follows how hard the Mac works (0...1): at rest the gap stretches by a quarter, at full load it
+    // is halved, and it is never faster than the natural period.
+    static func gap(base: TimeInterval, intensity: Double) -> TimeInterval {
+        max(period, base * (1.25 - 0.75 * clamp(intensity)))
+    }
+
+    // How far the leaf swells on a beat: a gentle thump when idle, the old full thump when flat out.
+    static func swell(intensity: Double) -> Double {
+        0.12 + 0.22 * clamp(intensity)
+    }
+
+    private static func clamp(_ value: Double) -> Double { min(max(value, 0), 1) }
+
     // Both pulses are over by the middle of a period; the second half is rest, so no frame is needed there.
     static let activeLength = period / 2
 

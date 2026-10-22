@@ -40,7 +40,10 @@ confine "asks for admin rights or touches sudoers" 'administrator privileges|osa
   Power/PrivilegedShell.swift Power/ElevatedInstallCommand.swift
 
 # Loading or hiding code at run time. The app has no use for any of it.
-confine "dynamic code or obfuscation" 'dlopen|dlsym|NSClassFromString|NSSelectorFromString|@_silgen_name|@_cdecl|unsafeBitCast|NSAppleScript|JavaScriptCore|import WebKit|WKWebView|Bundle\(path:|\.load\(\)|base64Encoded|Data\(base64|NSExpression'
+confine "dynamic code or obfuscation" 'dlopen|dlsym|NSClassFromString|@_silgen_name|@_cdecl|unsafeBitCast|NSAppleScript|JavaScriptCore|import WebKit|WKWebView|Bundle\(path:|\.load\(\)|base64Encoded|Data\(base64|NSExpression'
+
+# The one key-value-coding call for the menu subtitle, which older SDKs cannot compile directly.
+confine "selector chosen by name" 'NSSelectorFromString' Menu/MenuParts.swift
 
 # Package.swift: no third-party code, no binaries, no build plugins, no unsafe flags.
 if grep -nE '\.package\(|\.binaryTarget|\.plugin\(|\.systemLibrary|unsafeFlags|\.target\(|dependencies: \[[^]]' Package.swift | grep -v 'dependencies: \["TBPK"\]'; then

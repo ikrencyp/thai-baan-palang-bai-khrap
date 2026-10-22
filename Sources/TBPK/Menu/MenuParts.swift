@@ -48,7 +48,8 @@ enum MenuParts {
     }
 
     static func setSubtitle(_ text: String, on item: NSMenuItem) {
-        if #available(macOS 14.4, *) { item.subtitle = text }
+        // NSMenuItem.subtitle exists from macOS 14.4. Key-value coding builds with any SDK and does nothing on older macOS.
+        if item.responds(to: NSSelectorFromString("setSubtitle:")) { item.setValue(text, forKey: "subtitle") }
     }
 
     static func label(_ text: String, frame: NSRect) -> NSTextField {

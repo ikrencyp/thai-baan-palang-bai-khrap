@@ -112,9 +112,27 @@ final class MenuTests: XCTestCase {
         XCTAssertTrue(titles.contains("Keep the screen on while awake"))
     }
 
+    func testShowMeWhereTagsEachStepOfThePathAndNothingElse() throws {
+        let menu = NSMenu()
+        menu.addItem(PowerRulesMenu.item(target: target))
+        menu.addItem(SettingsMenu.item(target: target))
+        MenuHighlight.path = MenuHighlight.steps(of: "Power rules > Screen > Look present at the screen")
+        defer { MenuHighlight.path = [] }
+        MenuHighlight.apply(to: menu)
+        let rules = try XCTUnwrap(menu.items.first { $0.title == "Power rules" })
+        let leaf = try XCTUnwrap(rules.submenu?.items.first { $0.title == "Look present at the screen" })
+        let header = try XCTUnwrap(rules.submenu?.items.first { !$0.isEnabled && $0.attributedTitle?.string == "SCREEN" })
+        XCTAssertEqual(UpdateMenu.badgeText(of: rules), MenuHighlight.onTheWayLabel, "a step on the way says Open")
+        XCTAssertEqual(UpdateMenu.badgeText(of: leaf), UpdateMenu.newLabel, "the new item says New")
+        XCTAssertTrue(UpdateMenu.isMarkedNew(leaf))
+        XCTAssertFalse(UpdateMenu.isMarkedNew(rules))
+        XCTAssertFalse(UpdateMenu.isMarkedNew(header))
+        XCTAssertFalse(UpdateMenu.isMarkedNew(try XCTUnwrap(menu.items.first { $0.title == "Settings" })))
+    }
+
     func testSettingsHoldTheSwitchesTheEnergyChoiceAndNoQuitChoice() throws {
         let titles = try submenu(SettingsMenu.item(target: target), titled: "Settings").items.map(\.title)
-        XCTAssertEqual(titles, ["Show countdown", "Show animation", "Energy use", "Start at Login", "Updates"])
+        XCTAssertEqual(titles, ["Show countdown", "Show animation", "Leaf colour", "Energy use", "Start at Login", "Updates"])
     }
 
     func testAWaitingUpdateIsTaggedNewAndNothingElseIs() throws {

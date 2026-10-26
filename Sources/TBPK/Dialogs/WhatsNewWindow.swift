@@ -4,7 +4,7 @@ import AppKit
 enum WhatsNewWindow {
     static let lastVersionKey = "lastLaunchedVersion"
 
-    static func show(showMenu: @escaping () -> Void = {}) {
+    static func show(showMenu: @escaping (String) -> Void = { _ in }) {
         let releases = ReleaseNotes.bundledText().map(ReleaseNotes.all(in:)) ?? []
         InfoWindow.show(id: "whatsnew", title: "What's new", size: NSSize(width: 440, height: 480)) {
             WhatsNewView(releases: releases, current: AppInfo.version, showMenu: showMenu)

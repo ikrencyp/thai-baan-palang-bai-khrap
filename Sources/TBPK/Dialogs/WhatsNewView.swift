@@ -3,9 +3,9 @@ import SwiftUI
 struct WhatsNewView: View {
     @State private var pager: ReleasePager
     let current: String
-    let showMenu: () -> Void
+    let showMenu: (String) -> Void
 
-    init(releases: [Release], current: String, showMenu: @escaping () -> Void = {}) {
+    init(releases: [Release], current: String, showMenu: @escaping (String) -> Void = { _ in }) {
         _pager = State(initialValue: ReleasePager(releases: releases))
         self.current = current
         self.showMenu = showMenu
@@ -77,9 +77,10 @@ extension WhatsNewView {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Find it").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
                 Text(path).font(.callout.weight(.medium)).fixedSize(horizontal: false, vertical: true)
+                Text("The menu opens with a New tag on each step of the way.").font(.caption).foregroundStyle(.secondary)
             }
             Spacer(minLength: 8)
-            Button("Show me", action: showMenu).controlSize(.small)
+            Button("Show me where") { showMenu(path) }.controlSize(.small)
         }
         .padding(.top, 4)
     }

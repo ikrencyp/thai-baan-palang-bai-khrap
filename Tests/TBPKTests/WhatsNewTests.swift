@@ -14,6 +14,16 @@ final class WhatsNewTests: XCTestCase {
         XCTAssertEqual(ReleaseNotes.all(in: text), [Release(version: "1.1.0", lines: ["one", "two"], findIt: "Power rules > Screen")])
     }
 
+    func testEveryFindItPathOfTheChangelogStartsAtAMenuEntry() throws {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let changelog = try String(contentsOf: root.appendingPathComponent("CHANGELOG.md"), encoding: .utf8)
+        let menu = StatusMenuBuilder.build(power: PowerManager.shared, watch: UnattendedWatch(power: PowerManager.shared), target: StubMenuTarget())
+        let titles = menu.items.map(\.title)
+        for path in ReleaseNotes.all(in: changelog).compactMap(\.findIt) {
+            XCTAssertTrue(titles.contains(path.components(separatedBy: " > ")[0]), path)
+        }
+    }
+
     func testAFindItLineStaysOutOfTheUpdateDialog() {
         XCTAssertEqual(ReleaseNotes.summary(ofReleaseBody: "- one\n- Find it: Power rules\n- two"), "\u{2022} one\n\u{2022} two")
     }

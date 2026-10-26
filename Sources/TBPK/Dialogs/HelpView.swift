@@ -2,6 +2,9 @@ import AppKit
 import SwiftUI
 
 struct HelpView: View {
+    // The page shows the colours the person picked, not a fixed green and red.
+    private let charger = LeafColor.stored(.charger)
+    private let battery = LeafColor.stored(.battery)
     var body: some View {
         ScrollView { content }
             .frame(width: 480, height: 600)
@@ -16,10 +19,10 @@ struct HelpView: View {
                             .renderingMode(.template).foregroundStyle(Color.secondary).frame(width: 26)
                         text("Outline leaf", "Normal sleep. Nothing is held.")
                     }
-                    legend(StatusIconAnimator.powerGreen, "Green leaf in a golden flame, beating",
-                           "Awake and charging. The lid can close. It lights up with a flash when you turn it on.")
-                    legend(.systemRed, "Red leaf in a golden flame",
-                           "Awake and not charging. It stays red for as long as the Mac runs on battery.")
+                    legend(charger.nsColor, "Leaf in a golden flame, beating",
+                           "Awake and charging. The lid can close. It shows your On the charger colour (\(charger.name)) and lights up with a flash when you turn it on.")
+                    legend(battery.nsColor, "Leaf on battery",
+                           "Awake and not charging, or alerting. It shows your On battery colour (\(battery.name)) for as long as the Mac runs on battery.")
                     HStack(spacing: 12) {
                         Image(nsImage: LeafGlyph.failureImage() ?? NSImage())
                             .renderingMode(.template).foregroundStyle(Color.primary).frame(width: 26)
@@ -59,7 +62,7 @@ struct HelpView: View {
     @ViewBuilder
     private func icon(_ symbol: String) -> some View {
         if symbol == HelpTopic.leafSymbol {
-            Image(nsImage: LeafGlyph.image(fill: 1, scale: 1, alpha: 1, tint: StatusIconAnimator.powerGreen, glow: 0.8,
+            Image(nsImage: LeafGlyph.image(fill: 1, scale: 1, alpha: 1, tint: charger.nsColor, glow: 0.8,
                                          glowColor: StatusIconAnimator.powerGold)).frame(width: 26)
         } else {
             Image(systemName: symbol).font(.title3).foregroundStyle(Color(nsColor: StatusIconAnimator.powerGold)).frame(width: 26)

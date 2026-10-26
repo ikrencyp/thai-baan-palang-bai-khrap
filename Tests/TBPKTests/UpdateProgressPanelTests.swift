@@ -40,4 +40,17 @@ final class UpdateProgressPanelTests: XCTestCase {
         UpdateProgressPanel.hide()
         XCTAssertGreaterThan(stepped.height, plain.height)
     }
+
+    func testThePercentComesFromTheRealShareAndNeverGoesBack() {
+        XCTAssertEqual(UpdateProgressPanel.percentText(0.426), "43%")
+        XCTAssertEqual(UpdateProgressPanel.percentText(7), "100%")
+        UpdateProgressPanel.show("Downloading", detail: "wait", step: .download)
+        defer { UpdateProgressPanel.hide() }
+        XCTAssertEqual(UpdateProgressPanel.percentLabel, "0%")
+        UpdateProgressPanel.setProgress(0.6)
+        UpdateProgressPanel.setProgress(0.3)
+        XCTAssertEqual(UpdateProgressPanel.percentLabel, "60%")
+        UpdateProgressPanel.show("Preparing", detail: "wait", step: .prepare)
+        XCTAssertNil(UpdateProgressPanel.percentLabel, "only the download shows a percent")
+    }
 }

@@ -8,6 +8,7 @@ enum SettingsMenu {
                                #selector(StatusMenuTarget.countdownClicked(_:)), target))
         submenu.addItem(toggle("Show animation", on: StatusPreferences.showAnimation,
                                #selector(StatusMenuTarget.animationClicked(_:)), target))
+        submenu.addItem(LeafColorMenu.item(target: target))
         submenu.addItem(EnergyMenu.item(target: target))
         submenu.addItem(toggle("Start at Login", on: LoginItem.isEnabled,
                                #selector(StatusMenuTarget.loginClicked), target))

@@ -23,6 +23,9 @@ enum UpdateProgressPanel {
     private static var title: NSTextField?
     private static var detail: NSTextField?
     private static var steps: NSStackView?
+    private static var progressRow: NSStackView?
+    private static var bar: NSProgressIndicator?
+    private static var percent: NSTextField?
 
     static var isShowing: Bool { panel?.isVisible == true }
 
@@ -35,6 +38,7 @@ enum UpdateProgressPanel {
         title?.stringValue = message
         detail?.stringValue = text
         showSteps(step)
+        showProgress(step == .download)
         guard let panel else { return }
         fit(panel)
         guard !panel.isVisible else { return }
@@ -45,6 +49,32 @@ enum UpdateProgressPanel {
 
     static func hide() {
         panel?.orderOut(nil)
+    }
+
+    // The share of the download that is really in, as text; nil while the size is not known yet.
+    static var percentLabel: String? { progressRow?.isHidden == false ? percent?.stringValue : nil }
+
+    static func percentText(_ fraction: Double) -> String {
+        "\(Int((min(1, max(0, fraction)) * 100).rounded()))%"
+    }
+
+    // Only goes up: a late report from an earlier moment never moves the bar back.
+    static func setProgress(_ fraction: Double) {
+        guard let bar, let percent, progressRow?.isHidden == false else { return }
+        let value = max(min(1, fraction), bar.isIndeterminate ? 0 : bar.doubleValue / 100)
+        bar.stopAnimation(nil)
+        bar.isIndeterminate = false
+        bar.doubleValue = value * 100
+        percent.stringValue = percentText(value)
+    }
+
+    private static func showProgress(_ visible: Bool) {
+        guard let row = progressRow, let bar, let percent else { return }
+        row.isHidden = !visible
+        guard visible else { return bar.stopAnimation(nil) }
+        bar.isIndeterminate = true
+        bar.startAnimation(nil)
+        percent.stringValue = percentText(0)
     }
 
     static func stepText(_ step: Step, current: Step) -> NSAttributedString {
@@ -68,8 +98,9 @@ enum UpdateProgressPanel {
     private static func fit(_ panel: NSPanel) {
         guard let heading = title, let body = detail else { return }
         let bodyHeight = body.cell?.cellSize(forBounds: NSRect(x: 0, y: 0, width: textWidth, height: .greatestFiniteMagnitude)).height ?? 0
+        let progressHeight = progressRow.map { $0.isHidden ? 0 : 10 + $0.fittingSize.height } ?? 0
         let stepsHeight = steps.map { $0.isHidden ? 0 : 10 + $0.fittingSize.height } ?? 0
-        let column = heading.intrinsicContentSize.height + 4 + ceil(bodyHeight) + stepsHeight
+        let column = heading.intrinsicContentSize.height + 4 + ceil(bodyHeight) + progressHeight + stepsHeight
         panel.setContentSize(NSSize(width: textWidth + spinnerSize + 14 + 2 * margin, height: max(column, spinnerSize) + 2 * margin))
     }
 
@@ -91,8 +122,27 @@ enum UpdateProgressPanel {
         tracker.orientation = .horizontal
         tracker.spacing = 12
         tracker.isHidden = true
-        let column = NSStackView(views: [heading, body, tracker])
+        let meter = NSProgressIndicator()
+        meter.style = .bar
+        meter.controlSize = .small
+        meter.minValue = 0
+        meter.maxValue = 100
+        meter.isIndeterminate = true
+        meter.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        let share = NSTextField(labelWithString: "")
+        share.font = .monospacedDigitSystemFont(ofSize: 11, weight: .medium)
+        share.textColor = .secondaryLabelColor
+        share.alignment = .right
+        share.widthAnchor.constraint(equalToConstant: 36).isActive = true
+        let meterRow = NSStackView(views: [meter, share])
+        meterRow.orientation = .horizontal
+        meterRow.alignment = .centerY
+        meterRow.spacing = 8
+        meterRow.widthAnchor.constraint(equalToConstant: textWidth).isActive = true
+        meterRow.isHidden = true
+        let column = NSStackView(views: [heading, body, meterRow, tracker])
         column.setCustomSpacing(10, after: body)
+        column.setCustomSpacing(10, after: meterRow)
         column.orientation = .vertical
         column.alignment = .leading
         column.spacing = 4
@@ -114,5 +164,8 @@ enum UpdateProgressPanel {
         title = heading
         detail = body
         steps = tracker
+        progressRow = meterRow
+        bar = meter
+        percent = share
     }
 }

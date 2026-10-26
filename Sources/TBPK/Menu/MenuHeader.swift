@@ -9,11 +9,12 @@ enum MenuHeader {
         let detail: String
         let awake: Bool
         let failed: Bool
-        // Awake and either off the charger or alerting: the leaf is red, otherwise green.
-        var warning = false
+        // The colour the leaf takes in this state, nil when the leaf is just the menu bar colour.
+        var leaf: LeafColor? = nil
     }
 
-    static func content(power: PowerManager, alerting: Bool, onBattery: Bool = false) -> Content {
+    static func content(power: PowerManager, alerting: Bool, onBattery: Bool = false,
+                        charger: LeafColor = .stored(.charger), battery: LeafColor = .stored(.battery)) -> Content {
         if power.hasFailure {
             return Content(title: "Something went wrong", detail: power.statusMessage, awake: false, failed: true)
         }
@@ -22,7 +23,7 @@ enum MenuHeader {
                            awake: false, failed: false)
         }
         let detail = alerting ? "Left running on battery." : (onBattery ? batteryDetail(power) : (power.remainingTimeText ?? "Until you turn it off."))
-        return Content(title: "Staying awake", detail: detail, awake: true, failed: false, warning: alerting || onBattery)
+        return Content(title: "Staying awake", detail: detail, awake: true, failed: false, leaf: alerting || onBattery ? battery : charger)
     }
 
     private static func batteryDetail(_ power: PowerManager) -> String {
@@ -42,7 +43,7 @@ enum MenuHeader {
         glyph.image = content.failed
             ? LeafGlyph.failureImage()
             : LeafGlyph.image(fill: content.awake ? 1 : 0, scale: 1, alpha: 1,
-                              tint: content.awake ? (content.warning ? .systemRed : StatusIconAnimator.powerGreen) : nil,
+                              tint: content.leaf?.nsColor,
                               glow: content.awake ? 0.8 : 0, glowColor: content.awake ? StatusIconAnimator.powerGold : nil)
         glyph.imageScaling = .scaleProportionallyUpOrDown
         glyph.contentTintColor = content.failed ? .systemOrange : (content.awake ? nil : .secondaryLabelColor)

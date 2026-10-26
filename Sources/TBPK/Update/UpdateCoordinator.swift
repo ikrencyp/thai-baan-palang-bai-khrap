@@ -116,14 +116,14 @@ final class UpdateCoordinator {
     }
 
     // Quiet download into the app's data folder; the finished copy is remembered so installing is instant.
-    private func download(_ version: AppVersion) async -> Bool {
+    private func download(_ version: AppVersion, progress: (@Sendable (Double) -> Void)? = nil) async -> Bool {
         if UpdateStore.downloadedRoot(for: version) != nil { return true }
         phase = .downloading
         defer { phase = .idle }
         let base = UpdateInstaller.downloadFolder
         guard let assets = UpdateStore.availableAssets() else { return false }
         let latest = UpdateSource.Latest(version: version, tag: "v\(version.text)", notes: nil, dmg: assets.dmg, checksum: assets.checksum)
-        let checkout = await UpdateSource.fetch(latest, in: base)
+        let checkout = await UpdateSource.fetch(latest, in: base, progress: progress)
         guard let checkout, checkout.installer(for: version) != nil else {
             checkout?.remove()
             return false
@@ -139,7 +139,9 @@ final class UpdateCoordinator {
             if UpdateStore.downloadedRoot(for: version) == nil {
                 UpdateProgressPanel.show("Downloading version \(version.text)…",
                                          detail: "The app restarts by itself when the update is installed.", step: .download)
-                let ok = await download(version)
+                let ok = await download(version) { fraction in
+                    Task { @MainActor in UpdateProgressPanel.setProgress(fraction) }
+                }
                 guard ok else {
                     UpdateProgressPanel.hide()
                     return report("The update could not be downloaded",

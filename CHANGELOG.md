@@ -2,6 +2,13 @@
 
 Each release gets a `## x.y.z` heading and a few short `- ` lines. The update dialog shows the first four.
 
+## 1.2.0
+- New Settings > Leaf colour: one colour for the leaf on the charger and one for the battery, each from nine named colours or any colour code such as #FF8800; the golden flame stays golden
+- The colours show everywhere the leaf is drawn or described: the menu bar, the Staying awake row at the top of the menu and How to use; an alert shows the battery colour
+- Installing an update shows how much of the download is in, as a bar with a percent that only goes up, so you can see it is really loading
+- Show me where in What's new opens the menu with the way marked: the items on the path are in bold, the ones to open next say Open and the new item says New
+- Find it: Settings > Leaf colour
+
 ## 1.1.1
 - Installing an update shows its three steps (Download, Prepare, Install and restart) in the progress window, the finished ones ticked, so you see how far it is
 - Includes 1.1.0: Power rules > Screen > Look present at the screen keeps you from showing as away in chat apps while Keep awake is on (off by default)

@@ -8,4 +8,6 @@ struct IconTarget: Equatable {
     var beating: Bool
     var beatEvery: TimeInterval = Heartbeat.period
     var intensity: Double = PowerIntensity.unknown
+    var leaf: LeafColor = .standard
+    var batteryLeaf: LeafColor = .batteryStandard
 }

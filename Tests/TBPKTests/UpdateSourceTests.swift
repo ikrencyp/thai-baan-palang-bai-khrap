@@ -117,6 +117,20 @@ final class UpdateSourceTests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(atPath: checkout.root.appendingPathComponent("uninstall.sh").path))
     }
 
+    func testTheDownloadReportsAShareThatOnlyGrowsAndEndsAtOne() async throws {
+        let dmg = try makeDmg(version: "1.2.0")
+        let fixture = try SigningFixture(in: workspace)
+        try fixture.sign(dmg, namespace: "tbpk-release-1.2.0")
+        let seen = Seen()
+        let found = await UpdateSource.fetch(latest(dmg: dmg, checksum: try checksum(of: dmg, name: "TBPK-1.2.0.dmg")), in: workspace,
+                                             key: fixture.publicKey) { seen.add($0) }
+        let checkout = try XCTUnwrap(found)
+        defer { checkout.remove() }
+        let values = seen.values
+        XCTAssertEqual(values.last, 1)
+        XCTAssertEqual(values, values.sorted())
+    }
+
     func testADmgThatDoesNotMatchItsChecksumIsRefusedAndNothingIsLeftBehind() async throws {
         let dmg = try makeDmg(version: "1.2.0")
         let wrong = workspace.appendingPathComponent("wrong.sha256")
@@ -150,4 +164,12 @@ final class UpdateSourceTests: XCTestCase {
         let found = await UpdateSource.fetch(latest(dmg: workspace.appendingPathComponent("gone.dmg"), checksum: sum), in: workspace)
         XCTAssertNil(found)
     }
+}
+
+private final class Seen: @unchecked Sendable {
+    private let lock = NSLock()
+    private var all: [Double] = []
+
+    func add(_ value: Double) { lock.lock(); all.append(value); lock.unlock() }
+    var values: [Double] { lock.lock(); defer { lock.unlock() }; return all }
 }

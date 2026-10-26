@@ -23,14 +23,18 @@ final class StatusIconAnimator {
         let burst: Double
         let glow: Double
         let tint: Tint
+        let leaf: LeafColor
+        let batteryLeaf: LeafColor
 
-        init(fill: Double, scale: Double, alpha: Double, burst: Double, glow: Double, tint: Tint) {
+        init(fill: Double, scale: Double, alpha: Double, burst: Double, glow: Double, tint: Tint, leaf: LeafColor, batteryLeaf: LeafColor) {
             self.fill = Self.coarse(fill)
             self.scale = Self.coarse(scale)
             self.alpha = Self.coarse(alpha)
             self.burst = Self.coarse(burst)
             self.glow = Self.coarse(glow)
             self.tint = tint
+            self.leaf = leaf
+            self.batteryLeaf = batteryLeaf
         }
 
         private static func coarse(_ value: Double) -> Double { (value * 500).rounded() / 500 }
@@ -134,9 +138,8 @@ final class StatusIconAnimator {
         syncTimer()
     }
 
-    // The flame around the leaf is always golden; the leaf itself is green on the charger and red off it.
+    // The flame around the leaf is always golden; the leaf itself takes your On the charger or On battery colour.
     static let powerGold = NSColor(srgbRed: 1, green: 0.8, blue: 0.1, alpha: 1)
-    static let powerGreen = NSColor(srgbRed: 0.18, green: 0.86, blue: 0.43, alpha: 1)
 
     private func beating(_ settled: Bool) -> Bool {
         animated && target.beating && target.awake && settled
@@ -163,19 +166,22 @@ final class StatusIconAnimator {
         let powered = motion.fill > 0.35
         let glow = powered ? (0.45 + 0.55 * min(pulse, 1.2) / 1.2) * (0.6 + 0.4 * intensity) : 0
         let look = Look(fill: motion.drawnFill, scale: beat * pop, alpha: shimmer, burst: burstProgress ?? 0, glow: glow,
-                        tint: target.alerting ? .alert : (powered || burstProgress != nil ? .power : .none))
+                        tint: target.alerting ? .alert : (powered || burstProgress != nil ? .power : .none),
+                        leaf: target.leaf, batteryLeaf: target.batteryLeaf)
         guard look != lastLook else { return }
         lastLook = look
         applyImage(LeafGlyph.image(
-            fill: look.fill, scale: look.scale, alpha: look.alpha, tint: Self.color(look.tint), burst: look.burst, glow: look.glow,
+            fill: look.fill, scale: look.scale, alpha: look.alpha, tint: Self.color(look.tint, leaf: look.leaf, batteryLeaf: look.batteryLeaf), burst: look.burst, glow: look.glow,
             glowColor: look.tint == .none ? nil : Self.powerGold))
     }
 
-    private static func color(_ tint: Look.Tint) -> NSColor? {
+    // The leaf takes the colour of the power state it is in: the charger colour on the charger, the battery colour
+    // while the Mac runs on battery or an alert is showing.
+    private static func color(_ tint: Look.Tint, leaf: LeafColor, batteryLeaf: LeafColor) -> NSColor? {
         switch tint {
         case .none: return nil
-        case .alert: return .systemRed
-        case .power: return powerGreen
+        case .alert: return batteryLeaf.nsColor
+        case .power: return leaf.nsColor
         }
     }
 }

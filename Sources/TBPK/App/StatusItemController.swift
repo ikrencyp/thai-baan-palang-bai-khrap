@@ -77,7 +77,9 @@ final class StatusItemController: NSObject, StatusMenuTarget {
 
     private func popMenu() {
         let menu = StatusMenuBuilder.build(power: power, watch: watch, target: self)
+        MenuHighlight.apply(to: menu)
         menu.popUp(positioning: nil, at: NSPoint(x: 0, y: statusItem.button?.bounds.maxY ?? 0), in: statusItem.button)
+        MenuHighlight.path = []
     }
 
     private func render() {
@@ -104,7 +106,9 @@ final class StatusItemController: NSObject, StatusMenuTarget {
             alerting: watch.isAlerting || runsOnBattery,
             beating: icon.isPulsing && plan.beatEvery != nil,
             beatEvery: plan.beatEvery ?? Heartbeat.period,
-            intensity: powerMeter.level
+            intensity: powerMeter.level,
+            leaf: LeafColor.stored(.charger),
+            batteryLeaf: LeafColor.stored(.battery)
         )
     }
 
@@ -278,6 +282,20 @@ final class StatusItemController: NSObject, StatusMenuTarget {
         governor?.evaluate()
     }
 
+    @objc func leafColorClicked(_ item: NSMenuItem) {
+        guard let pick = item.representedObject as? LeafColor.Pick else { return }
+        pick.color.store(pick.slot)
+        render()
+    }
+
+    @objc func customLeafColorClicked(_ item: NSMenuItem) {
+        guard let slot = item.representedObject as? LeafColor.Slot else { return }
+        NSApp.activate(ignoringOtherApps: true)
+        guard let color = LeafColorPrompt.ask(current: LeafColor.stored(slot), title: slot.label) else { return }
+        color.store(slot)
+        render()
+    }
+
     @objc func darkenClicked() {
         StatusPreferences.toggleDarkenWhenClosed()
         governor?.evaluate()
@@ -358,7 +376,10 @@ final class StatusItemController: NSObject, StatusMenuTarget {
     }
 
     @objc func whatsNewClicked() {
-        WhatsNewWindow.show { [weak self] in self?.statusItem.button?.performClick(nil) }
+        WhatsNewWindow.show { [weak self] findIt in
+            MenuHighlight.path = MenuHighlight.steps(of: findIt)
+            self?.statusItem.button?.performClick(nil)
+        }
     }
 
     @objc func aboutClicked() {

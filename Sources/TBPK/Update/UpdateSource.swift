@@ -76,14 +76,15 @@ enum UpdateSource {
 
     // Downloads the dmg, its checksum and its signature, refuses a dmg that does not match either, and lifts `install.sh` out of the dmg
     // so the finished folder looks like the one install.sh expects.
+    // `progress` goes from 0 to 1 and never back: the dmg is nearly all of the work, so its share is what is reported.
     static func fetch(_ latest: Latest, in base: URL = FileManager.default.temporaryDirectory,
-                      key: Data = ReleaseSignature.trustedKey) async -> ReleaseCheckout? {
+                      key: Data = ReleaseSignature.trustedKey, progress: (@Sendable (Double) -> Void)? = nil) async -> ReleaseCheckout? {
         let root = base.appendingPathComponent("tbpk-update-\(UUID().uuidString)")
         let dist = root.appendingPathComponent("dist")
         let dmgFile = dist.appendingPathComponent("TBPK-\(latest.version.text).dmg")
         do {
             try FileManager.default.createDirectory(at: dist, withIntermediateDirectories: true)
-            try await download(latest.dmg, to: dmgFile)
+            try await download(latest.dmg, to: dmgFile, progress: progress)
             let (sum, sumResponse) = try await URLSession.shared.data(from: latest.checksum)
             if let http = sumResponse as? HTTPURLResponse, http.statusCode != 200 { throw URLError(.badServerResponse) }
             let bytes = try Data(contentsOf: dmgFile)
@@ -94,6 +95,7 @@ enum UpdateSource {
                 throw CocoaError(.fileReadCorruptFile)
             }
             try liftScripts(from: dmgFile, to: root)
+            progress?(1)
             return ReleaseCheckout(root: root)
         } catch {
             try? FileManager.default.removeItem(at: root)
@@ -101,8 +103,8 @@ enum UpdateSource {
         }
     }
 
-    private static func download(_ url: URL, to file: URL) async throws {
-        let (temp, response) = try await URLSession.shared.download(from: url)
+    private static func download(_ url: URL, to file: URL, progress: (@Sendable (Double) -> Void)?) async throws {
+        let (temp, response) = try await URLSession.shared.download(from: url, delegate: progress.map(DownloadShare.init))
         if let http = response as? HTTPURLResponse, http.statusCode != 200 { throw URLError(.badServerResponse) }
         try? FileManager.default.removeItem(at: file)
         try FileManager.default.moveItem(at: temp, to: file)
@@ -137,4 +139,29 @@ enum UpdateSource {
         process.waitUntilExit()
         return process.terminationStatus
     }
+}
+
+// Reports how much of a download is in. It keeps the highest value, so a late report never moves the bar back,
+// and stops at 0.95: the rest is the checksum and signature checks, which end with the 1 from `fetch`.
+private final class DownloadShare: NSObject, URLSessionDownloadDelegate, @unchecked Sendable {
+    private let report: @Sendable (Double) -> Void
+    private let lock = NSLock()
+    private var highest = 0.0
+
+    init(_ report: @escaping @Sendable (Double) -> Void) {
+        self.report = report
+    }
+
+    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didWriteData bytesWritten: Int64,
+                    totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
+        guard totalBytesExpectedToWrite > 0 else { return }
+        let share = min(0.95, Double(totalBytesWritten) / Double(totalBytesExpectedToWrite) * 0.95)
+        lock.lock()
+        let isNew = share > highest + 0.004
+        if isNew { highest = share }
+        lock.unlock()
+        if isNew { report(share) }
+    }
+
+    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {}
 }

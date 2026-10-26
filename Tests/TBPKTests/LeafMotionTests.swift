@@ -100,7 +100,7 @@ final class LeafColourTests: XCTestCase {
     }
 
     func testTheChargingLeafIsGreenInAGoldenFlame() {
-        let found = colours(LeafGlyph.image(fill: 1, scale: 1, alpha: 1, tint: StatusIconAnimator.powerGreen, glow: 1,
+        let found = colours(LeafGlyph.image(fill: 1, scale: 1, alpha: 1, tint: LeafColor.standard.nsColor, glow: 1,
                                             glowColor: StatusIconAnimator.powerGold))
         XCTAssertGreaterThan(found.green, 10, "the leaf")
         XCTAssertGreaterThan(found.gold, 10, "the flame")

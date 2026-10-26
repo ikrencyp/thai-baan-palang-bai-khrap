@@ -25,22 +25,34 @@ enum UpdateMenu {
 
     static let newLabel = "New"
 
-    // A "New" tag at the end of the line, so the item that installs the update is the one that stands out.
+    // A tag at the end of the line, so the item that installs the update is the one that stands out.
     // macOS 14 draws it as a native badge; macOS 13 gets the same word in blue after the title.
-    private static func markAsNew(_ item: NSMenuItem) {
+    // `emphasized` also sets the title in bold, for the items "Show me where" points at.
+    static func markAsNew(_ item: NSMenuItem, label: String = newLabel, emphasized: Bool = false) {
         if #available(macOS 14.0, *) {
-            item.badge = NSMenuItemBadge(string: newLabel)
+            item.badge = NSMenuItemBadge(string: label)
+            if emphasized { item.attributedTitle = emphasizedTitle(item.title) }
         } else {
-            let text = NSMutableAttributedString(string: item.title)
-            text.append(NSAttributedString(string: "  \(newLabel)", attributes: [
+            let text = NSMutableAttributedString(attributedString: emphasized ? emphasizedTitle(item.title) : NSAttributedString(string: item.title))
+            text.append(NSAttributedString(string: "  \(label)", attributes: [
                 .foregroundColor: NSColor.systemBlue, .font: NSFont.menuFont(ofSize: 0),
             ]))
             item.attributedTitle = text
         }
     }
 
+    private static func emphasizedTitle(_ title: String) -> NSAttributedString {
+        let bold = NSFontManager.shared.convert(NSFont.menuFont(ofSize: 0), toHaveTrait: .boldFontMask)
+        return NSAttributedString(string: title, attributes: [.font: bold])
+    }
+
+    static func badgeText(of item: NSMenuItem) -> String? {
+        if #available(macOS 14.0, *) { return item.badge?.stringValue }
+        return nil
+    }
+
     static func isMarkedNew(_ item: NSMenuItem) -> Bool {
-        if #available(macOS 14.0, *), let badge = item.badge { return badge.stringValue == newLabel }
+        if #available(macOS 14.0, *) { return badgeText(of: item) == newLabel }
         return item.attributedTitle?.string.hasSuffix(newLabel) == true
     }
 

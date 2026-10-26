@@ -63,6 +63,14 @@ Chat apps such as Teams or Slack show you as away after a few minutes without mo
 
 It only runs while Keep awake is on and the screen is held. It stays quiet while the lid is shut or the screen is locked with **Turn the screen off when locked or closed** on. After an update, **What's new** shows where to find it, with a **Show me** button that opens the menu.
 
+## Leaf colour
+
+**Settings > Leaf colour** has two colours: **On the charger** (green by default) and **On battery** (red by default). The leaf shows the first while the Mac is charging and the second while it runs on battery or an alert is showing. The flame around it stays golden.
+
+1. Click the leaf, open **Settings > Leaf colour**, then **On the charger** or **On battery**.
+2. Pick one of nine colours, or **Custom colour...** and type a code such as `#FF8800` (`FF8800` and the short `#F80` work too). A wrong code is explained and asked again.
+3. The menu bar, the **Staying awake** row and **How to use** change at once.
+
 ## Energy use
 
 **Settings > Energy use** decides how hard the app works to look alive. **Automatic** is the default: calm on the charger, still on battery.

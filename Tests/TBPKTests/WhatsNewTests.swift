@@ -36,6 +36,28 @@ final class WhatsNewTests: XCTestCase {
         XCTAssertFalse(WhatsNewWindow.shouldShowAtLaunch(current: "2.3.0", in: defaults))
     }
 
+    func testTheFirstLaunchIsToldApartFromAnUpdateAndARepeat() {
+        let defaults = scratchDefaults("tbpk-launch")
+        XCTAssertEqual(WhatsNewWindow.launch(current: "1.2.1", in: defaults), .firstInstall)
+        XCTAssertEqual(WhatsNewWindow.launch(current: "1.2.1", in: defaults), .same)
+        XCTAssertEqual(WhatsNewWindow.launch(current: "1.3.0", in: defaults), .updated)
+    }
+
+    func testTheScreenOffRuleStartsOffOnANewInstallAndStaysOnForAnInstallThatHadIt() {
+        let fresh = scratchDefaults("tbpk-darken-new")
+        StatusPreferences.keepEarlierDarkenChoice(in: fresh)
+        XCTAssertNil(fresh.object(forKey: StatusPreferences.darkenKey), "a new install has no stored choice, which reads as off")
+        let earlier = scratchDefaults("tbpk-darken-old")
+        earlier.set("1.0.4", forKey: WhatsNewWindow.lastVersionKey)
+        StatusPreferences.keepEarlierDarkenChoice(in: earlier)
+        XCTAssertTrue(earlier.bool(forKey: StatusPreferences.darkenKey))
+        let chosen = scratchDefaults("tbpk-darken-off")
+        chosen.set("1.0.4", forKey: WhatsNewWindow.lastVersionKey)
+        chosen.set(false, forKey: StatusPreferences.darkenKey)
+        StatusPreferences.keepEarlierDarkenChoice(in: chosen)
+        XCTAssertFalse(chosen.bool(forKey: StatusPreferences.darkenKey), "a choice the person made is never overwritten")
+    }
+
     func testTheChangelogOfThisRepositoryStartsWithTheVersionFileDeclares() throws {
         let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
         let changelog = try String(contentsOf: root.appendingPathComponent("CHANGELOG.md"), encoding: .utf8)

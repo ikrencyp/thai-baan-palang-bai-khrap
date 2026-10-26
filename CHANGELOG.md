@@ -2,6 +2,12 @@
 
 Each release gets a `## x.y.z` heading and a few short `- ` lines. The update dialog shows the first four.
 
+## 1.2.1
+- What's new has a new layout: a header with the app icon and your version, one card per release with the changes in a clear list, and a tinted "Where to find it" row with the menu path and the Show me where button
+- How to use has a new layout too: numbered quick-start steps, a card that explains each leaf, and one card per menu item with its own icon
+- A new install opens How to use the first time, so you see how the app works; an update still opens What's new
+- Turn the screen off when locked or closed is off on a new install now; an install that already ran keeps it as it was
+
 ## 1.2.0
 - New Settings > Leaf colour: one colour for the leaf on the charger and one for the battery, each from nine named colours or any colour code such as #FF8800; the golden flame stays golden
 - The colours show everywhere the leaf is drawn or described: the menu bar, the Staying awake row at the top of the menu and How to use; an alert shows the battery colour

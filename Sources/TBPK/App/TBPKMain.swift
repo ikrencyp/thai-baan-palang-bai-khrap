@@ -53,7 +53,12 @@ final class TBPKMain: NSObject, NSApplicationDelegate {
         statusItem?.governor = governor
         routeTerminationSignalsThroughQuit()
         UpdateCoordinator.shared.startSchedule()
-        if WhatsNewWindow.shouldShowAtLaunch(current: AppInfo.version) { statusItem?.whatsNewClicked() }
+        StatusPreferences.keepEarlierDarkenChoice()
+        switch WhatsNewWindow.launch(current: AppInfo.version) {
+        case .firstInstall: statusItem?.helpClicked()
+        case .updated: statusItem?.whatsNewClicked()
+        case .same: break
+        }
     }
 
     // Every timer asks the energy plan how often to wake up; the power sync is told here, the others subscribe themselves.

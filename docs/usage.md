@@ -1,5 +1,7 @@
 # Using TBPK
 
+The first time the app starts after a new install it opens **How to use**, so you see what it can do. After an update it opens **What's new** once instead.
+
 Click the leaf in the menu bar to open the menu. This page goes through it, one part at a time.
 
 ## Stay awake for
@@ -50,7 +52,7 @@ If your Mac is muted or very quiet, the app turns the speaker up so you can hear
 - **Low Power Mode while on battery** (off by default): while the Mac is kept awake, it also runs in Low Power Mode on battery. The old setting is put back afterwards. Switching it on asks for your password once and adds the same no-password file as "Allow, no password after this" (see [Permissions](permissions.md)), even if you chose to be asked every time.
 - **Keep the screen on while awake** (on by default): the screen does not go dark by itself. Turn it off and the Mac follows its normal screen timeout, but still stays awake.
 - **Look present at the screen** (off by default): see below.
-- **Turn the screen off when locked or closed** (on by default): the screen goes dark when you lock it or shut the lid.
+- **Turn the screen off when locked or closed** (off on a new install; an install that already ran keeps it on): the screen goes dark when you lock it or shut the lid.
 
 ### Look present at the screen
 
@@ -61,7 +63,7 @@ Chat apps such as Teams or Slack show you as away after a few minutes without mo
 3. Turn on Keep awake and walk away. Every minute the app sends one mouse-moved event that moves nothing, so the Mac never looks idle.
 4. To stop, choose the same item again. Nothing is sent and idle time counts as before.
 
-It only runs while Keep awake is on and the screen is held. It stays quiet while the lid is shut or the screen is locked with **Turn the screen off when locked or closed** on. After an update, **What's new** shows where to find it, with a **Show me** button that opens the menu.
+It only runs while Keep awake is on and the screen is held. It stays quiet while the lid is shut or the screen is locked with **Turn the screen off when locked or closed** on. After an update, **What's new** shows where to find it, with a **Show me where** button that opens the menu.
 
 ## Leaf colour
 

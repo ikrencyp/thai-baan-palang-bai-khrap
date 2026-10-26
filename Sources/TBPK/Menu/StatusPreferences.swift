@@ -3,7 +3,7 @@ import Foundation
 enum StatusPreferences {
     private static let countdownKey = "showCountdown"
     private static let animationKey = "showAnimation"
-    private static let darkenKey = "darkenWhenClosed"
+    static let darkenKey = "darkenWhenClosed"
     private static let keepScreenKey = "keepScreenOn"
     private static let lookPresentKey = "lookPresent"
 
@@ -15,8 +15,16 @@ enum StatusPreferences {
         stored(animationKey)
     }
 
+    // Off on a new install: the screen stays as it is until the person asks for it to go dark.
     static var darkenWhenClosed: Bool {
-        stored(darkenKey)
+        UserDefaults.standard.bool(forKey: darkenKey)
+    }
+
+    // Earlier versions had this on without the person ever choosing it. An install that already ran keeps it on,
+    // so an update changes nothing for it; only a new install starts with it off. Run before the launch is recorded.
+    static func keepEarlierDarkenChoice(in defaults: UserDefaults = .standard) {
+        guard defaults.object(forKey: darkenKey) == nil, defaults.string(forKey: WhatsNewWindow.lastVersionKey) != nil else { return }
+        defaults.set(true, forKey: darkenKey)
     }
 
     // On (the default): while awake the app holds a "do not dim or sleep the display" request with macOS.

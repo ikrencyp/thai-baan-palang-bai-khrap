@@ -372,7 +372,7 @@ final class StatusItemController: NSObject, StatusMenuTarget {
     }
 
     @objc func helpClicked() {
-        InfoWindow.show(id: "help", title: "How to use", size: NSSize(width: 480, height: 600)) { HelpView() }
+        InfoWindow.show(id: "help", title: "How to use", size: HelpView.size) { HelpView() }
     }
 
     @objc func whatsNewClicked() {

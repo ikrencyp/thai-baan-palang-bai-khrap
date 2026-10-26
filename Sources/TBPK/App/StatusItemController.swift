@@ -272,6 +272,12 @@ final class StatusItemController: NSObject, StatusMenuTarget {
         governor?.evaluate()
     }
 
+    @objc func lookPresentClicked() {
+        StatusPreferences.toggleLookPresent()
+        if StatusPreferences.lookPresent { ScreenPresence.requestAccess() }
+        governor?.evaluate()
+    }
+
     @objc func darkenClicked() {
         StatusPreferences.toggleDarkenWhenClosed()
         governor?.evaluate()
@@ -352,7 +358,7 @@ final class StatusItemController: NSObject, StatusMenuTarget {
     }
 
     @objc func whatsNewClicked() {
-        WhatsNewWindow.show()
+        WhatsNewWindow.show { [weak self] in self?.statusItem.button?.performClick(nil) }
     }
 
     @objc func aboutClicked() {

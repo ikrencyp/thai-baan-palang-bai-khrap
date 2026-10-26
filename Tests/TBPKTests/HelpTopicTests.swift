@@ -4,7 +4,7 @@ import XCTest
 final class HelpTopicTests: XCTestCase {
     func testEveryTopMenuEntryHasAHelpCard() {
         let titles = HelpTopic.menu.map(\.title)
-        for entry in ["Keep this Mac awake", "Stay awake for", "Alerts", "Power rules", "Energy use", "Settings", "What\u{2019}s new"] {
+        for entry in ["Keep this Mac awake", "Stay awake for", "Alerts", "Power rules", "Look present at the screen", "Energy use", "Settings", "What\u{2019}s new"] {
             XCTAssertTrue(titles.contains(entry), entry)
         }
     }

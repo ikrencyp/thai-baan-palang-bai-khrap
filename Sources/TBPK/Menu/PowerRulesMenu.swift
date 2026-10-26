@@ -21,6 +21,10 @@ enum PowerRulesMenu {
                                     #selector(StatusMenuTarget.keepScreenClicked), target)
         keep.state = StatusPreferences.keepScreenOn ? .on : .off
         submenu.addItem(keep)
+        let present = MenuParts.action("Look present at the screen", symbol: nil,
+                                       #selector(StatusMenuTarget.lookPresentClicked), target)
+        present.state = StatusPreferences.lookPresent ? .on : .off
+        submenu.addItem(present)
         let darken = MenuParts.action("Turn the screen off when locked or closed", symbol: nil,
                                       #selector(StatusMenuTarget.darkenClicked), target)
         darken.state = StatusPreferences.darkenWhenClosed ? .on : .off

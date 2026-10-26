@@ -39,6 +39,9 @@ confine "hard-coded web address" 'https?://' Update/UpdateSource.swift
 confine "asks for admin rights or touches sudoers" 'administrator privileges|osascript|NOPASSWD|AuthorizationExecute|SMJobBless' \
   Power/PrivilegedShell.swift Power/ElevatedInstallCommand.swift
 
+# Posting keyboard or mouse events. Only the screen presence switch does, and only with the Accessibility permission.
+confine "posts input events" 'CGEvent|CGRequestPostEventAccess|CGPreflightPostEventAccess|AXIsProcessTrusted' Power/ScreenPresence.swift
+
 # Loading or hiding code at run time. The app has no use for any of it.
 confine "dynamic code or obfuscation" 'dlopen|dlsym|NSClassFromString|@_silgen_name|@_cdecl|unsafeBitCast|NSAppleScript|JavaScriptCore|import WebKit|WKWebView|Bundle\(path:|\.load\(\)|NSExpression'
 

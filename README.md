@@ -4,7 +4,7 @@
 
 A small free app that sits in the menu bar. Turn it on, and your Mac stays awake even with the lid shut. Turn it off, and the Mac sleeps like normal again.
 
-Version 1.0.4 · macOS 13 or newer · Apple Silicon and Intel · MIT License
+Version 1.1.0 · macOS 13 or newer · Apple Silicon and Intel · MIT License
 
 ## Why I made it
 
@@ -21,6 +21,7 @@ The idea comes from [Amphetamine](https://apps.apple.com/app/amphetamine/id93798
 - Stay awake for 30 minutes, 1, 2, 4, 8 or 12 hours, any time you type, until a date and time, or until you turn it off.
 - Plays a warning sound if the Mac is awake with the lid shut or the screen locked, so you do not forget it in your bag. The sound comes from the Mac's own speaker, not from Bluetooth headphones or AirPods.
 - Can go back to normal sleep by itself when the battery runs low or you pull the charger (you choose; it is off until you turn it on).
+- Can keep you looking present while you are away: chat apps do not flip you to "away" when you step out (off until you turn it on).
 - When you quit, it puts the Mac back how it found it.
 
 ## Install
@@ -61,7 +62,7 @@ You need Xcode or the Command Line Tools, nothing else.
 ```bash
 git clone https://github.com/ikrencyp/thai-baan-palang-bai-khrap.git
 cd thai-baan-palang-bai-khrap
-./build.sh      # runs the tests and builds dist/TBPK-1.0.4.dmg
+./build.sh      # runs the tests and builds dist/TBPK-1.1.0.dmg
 ./install.sh    # installs it
 ```
 
@@ -85,6 +86,7 @@ An honest list, so nothing surprises you:
 
 - It runs the built-in macOS command `pmset`: to turn sleep off and on, to read the state, to darken the screen when you lock it, and, only if you switch on Low Power Mode, to set that. Changing sleep and Low Power Mode needs admin rights.
 - If you pick "no password after this" (or later switch on Low Power Mode, which needs the same file), it adds one small file, `/etc/sudoers.d/tbpk-<your name>`. That file lets your account run four exact `pmset` commands without a password, and nothing else.
+- Only if you switch on Look present at the screen: it sends one tiny no-move mouse event a minute, which needs the Accessibility permission.
 - It may turn the speaker volume up for the warning sound, then puts it back.
 - It checks GitHub for a new version every few hours. It does not install one unless you switch that on.
 

@@ -5,6 +5,7 @@ enum StatusPreferences {
     private static let animationKey = "showAnimation"
     private static let darkenKey = "darkenWhenClosed"
     private static let keepScreenKey = "keepScreenOn"
+    private static let lookPresentKey = "lookPresent"
 
     static var showCountdown: Bool {
         stored(countdownKey)
@@ -22,6 +23,15 @@ enum StatusPreferences {
     // Off: it holds none, so the display follows the Mac's own display sleep time.
     static var keepScreenOn: Bool {
         stored(keepScreenKey)
+    }
+
+    // Off (the default): the app sends no input. On: while awake it keeps the Mac from looking idle (see ScreenPresence).
+    static var lookPresent: Bool {
+        UserDefaults.standard.bool(forKey: lookPresentKey)
+    }
+
+    static func toggleLookPresent() {
+        set(!lookPresent, forKey: lookPresentKey)
     }
 
     static func toggleKeepScreenOn() {

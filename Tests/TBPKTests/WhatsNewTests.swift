@@ -9,6 +9,15 @@ final class WhatsNewTests: XCTestCase {
         XCTAssertEqual(ReleaseNotes.all(in: log), [Release(version: "2.1.0", lines: ["one", "two"]), Release(version: "2.0.0", lines: ["old"])])
     }
 
+    func testAFindItLineIsKeptApartFromTheChanges() {
+        let text = "## 1.1.0\n- one\n- Find it: Power rules > Screen\n- two\n"
+        XCTAssertEqual(ReleaseNotes.all(in: text), [Release(version: "1.1.0", lines: ["one", "two"], findIt: "Power rules > Screen")])
+    }
+
+    func testAFindItLineStaysOutOfTheUpdateDialog() {
+        XCTAssertEqual(ReleaseNotes.summary(ofReleaseBody: "- one\n- Find it: Power rules\n- two"), "\u{2022} one\n\u{2022} two")
+    }
+
     func testTheListOpensOnceAfterAnUpdateButNotOnAFirstInstall() {
         let defaults = scratchDefaults("tbpk-whatsnew")
         XCTAssertFalse(WhatsNewWindow.shouldShowAtLaunch(current: "2.2.0", in: defaults))

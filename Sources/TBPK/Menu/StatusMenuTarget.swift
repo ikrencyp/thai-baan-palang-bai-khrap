@@ -14,6 +14,7 @@ import AppKit
     @objc func powerLimitClicked(_ item: NSMenuItem)
     @objc func darkenClicked()
     @objc func keepScreenClicked()
+    @objc func lookPresentClicked()
     @objc func batterySaverClicked()
     @objc func testAlertClicked()
     @objc func alertSoundClicked(_ item: NSMenuItem)

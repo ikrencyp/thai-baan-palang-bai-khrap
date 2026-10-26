@@ -1,10 +1,12 @@
 import Foundation
 
 enum ReleaseNotes {
+    static let findItPrefix = "- Find it: "
+
     // The first lines of a GitHub release body that are bullets, shown in the update dialog.
     static func summary(ofReleaseBody body: String, maxLines: Int = 4) -> String? {
         let lines = body.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }
-            .filter { $0.hasPrefix("- ") || $0.hasPrefix("* ") }.map { String($0.dropFirst(2)) }
+            .filter { ($0.hasPrefix("- ") || $0.hasPrefix("* ")) && !$0.hasPrefix(findItPrefix) }.map { String($0.dropFirst(2)) }
         return lines.isEmpty ? nil : lines.prefix(maxLines).map { "• " + $0 }.joined(separator: "\n")
     }
 
@@ -13,14 +15,18 @@ enum ReleaseNotes {
         var releases: [Release] = []
         var version: String?
         var lines: [String] = []
+        var findIt: String?
         func close() {
-            if let version, !lines.isEmpty { releases.append(Release(version: version, lines: lines)) }
+            if let version, !lines.isEmpty { releases.append(Release(version: version, lines: lines, findIt: findIt)) }
             lines = []
+            findIt = nil
         }
         for line in changelog.split(separator: "\n", omittingEmptySubsequences: false).map(String.init) {
             if line.hasPrefix("## ") {
                 close()
                 version = line.dropFirst(3).split(separator: " ").first.map(String.init)
+            } else if version != nil, line.hasPrefix(findItPrefix) {
+                findIt = String(line.dropFirst(findItPrefix.count))
             } else if version != nil, line.hasPrefix("- ") {
                 lines.append(String(line.dropFirst(2)))
             }

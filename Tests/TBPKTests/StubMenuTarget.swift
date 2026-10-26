@@ -15,6 +15,7 @@ class StubMenuTarget: NSObject, StatusMenuTarget {
     func powerLimitClicked(_ item: NSMenuItem) {}
     func darkenClicked() {}
     func keepScreenClicked() {}
+    func lookPresentClicked() {}
     func batterySaverClicked() {}
     func testAlertClicked() {}
     func alertSoundClicked(_ item: NSMenuItem) {}

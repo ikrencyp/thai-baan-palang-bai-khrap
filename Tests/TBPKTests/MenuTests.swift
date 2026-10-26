@@ -106,6 +106,7 @@ final class MenuTests: XCTestCase {
 
     func testPowerRulesOfferEveryLimitAndTheScreenSwitch() throws {
         let titles = try submenu(PowerRulesMenu.item(target: target), titled: "Power rules").items.map(\.title)
+        XCTAssertTrue(titles.contains("Look present at the screen"))
         for limit in PowerLimit.allCases { XCTAssertTrue(titles.contains(limit.label), limit.label) }
         XCTAssertTrue(titles.contains("Turn the screen off when locked or closed"))
         XCTAssertTrue(titles.contains("Keep the screen on while awake"))

@@ -2,6 +2,13 @@
 
 Each release gets a `## x.y.z` heading and a few short `- ` lines. The update dialog shows the first four.
 
+## 1.1.0
+- New Power rules > Screen > Look present at the screen (off by default): while Keep awake is on, the Mac does not look idle to other apps, so a chat app does not show you as away when you step out; switch it off and everything goes back to how it was
+- It sends one tiny mouse event with no movement a minute, so macOS asks once for the Accessibility permission; nothing is sent while Keep awake is off, or while the lid is shut or the screen is locked with the screen-off rule on
+- What's new now carries a short tour: a release can say where its new thing sits in the menu, with a Show me button that opens the menu
+- How to use has a card for the new switch
+- Find it: Power rules > Screen > Look present at the screen
+
 ## 1.0.4
 - The leaf is green while the Mac is charging and red when it is not, and the flame around it is golden in both cases
 - The same colours show in the menu header and in the How to use window

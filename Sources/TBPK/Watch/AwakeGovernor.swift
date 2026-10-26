@@ -5,6 +5,7 @@ import Foundation
 final class AwakeGovernor {
     private let power: PowerManager
     private let displayGuard: DisplaySleepGuard
+    private let presence = ScreenPresence()
     private let energy: EnergyMonitor
     private var timer: Timer?
     private var wasDark = false
@@ -45,6 +46,7 @@ final class AwakeGovernor {
         let holds = DisplayPolicy.holdsDisplay(
             awake: true, keepScreenOn: StatusPreferences.keepScreenOn, darkenWhenClosed: darken, locked: snapshot.screenLocked, lidClosed: snapshot.lidClosed)
         displayGuard.setHolding(holds)
+        presence.setActive(holds && StatusPreferences.lookPresent)
         if !holds, !wasDark, snapshot.screenLocked { DisplayControl.sleepNow() }
         wasDark = !holds
     }
@@ -74,5 +76,6 @@ final class AwakeGovernor {
         observer.stop()
         wasDark = false
         displayGuard.setHolding(false)
+        presence.setActive(false)
     }
 }

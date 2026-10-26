@@ -44,3 +44,7 @@ It runs as admin, so it is done carefully:
 - **It never edits `/etc/sudoers`.** If your Mac does not read the `/etc/sudoers.d` folder, the app stops and tells you. It accepts the line as `@includedir /etc/sudoers.d`, `@includedir /private/etc/sudoers.d` or the older `#includedir` spelling.
 - **The account name is checked.** Only letters, digits, `.`, `_` and `-` are allowed, and not a leading `-` or the word `ALL`. `sudo` skips files with a dot in the name, so `first.last` becomes `tbpk-first_last` while the rule inside keeps the real name.
 - **It checks the result.** After adding the file, the app asks `sudo` whether the rule really works, and only then says so.
+
+## The Accessibility permission
+
+Only if you switch on **Look present at the screen**. macOS asks the first time, and you grant it in System Settings > Privacy & Security > Accessibility. The app uses it for one thing: once a minute, while Keep awake is on, it posts a mouse-moved event at the pointer's current position, so nothing moves. It does not read the keyboard, the mouse or the screen. Switch the item off, or remove the app from the Accessibility list, and nothing is sent.

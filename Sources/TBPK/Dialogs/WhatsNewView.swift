@@ -3,10 +3,12 @@ import SwiftUI
 struct WhatsNewView: View {
     @State private var pager: ReleasePager
     let current: String
+    let showMenu: () -> Void
 
-    init(releases: [Release], current: String) {
+    init(releases: [Release], current: String, showMenu: @escaping () -> Void = {}) {
         _pager = State(initialValue: ReleasePager(releases: releases))
         self.current = current
+        self.showMenu = showMenu
     }
 
     var body: some View {
@@ -59,9 +61,26 @@ struct WhatsNewView: View {
                     Text(line).font(.callout).fixedSize(horizontal: false, vertical: true)
                 }
             }
+            if let findIt = release.findIt { findItRow(findIt) }
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: 10).fill(Color.primary.opacity(isCurrent ? 0.08 : 0.04)))
+    }
+}
+
+extension WhatsNewView {
+    // The short tour of a release: where its new thing sits in the menu, and a button that opens the menu.
+    fileprivate func findItRow(_ path: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Image(systemName: "mappin.and.ellipse").foregroundStyle(.tint)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Find it").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                Text(path).font(.callout.weight(.medium)).fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 8)
+            Button("Show me", action: showMenu).controlSize(.small)
+        }
+        .padding(.top, 4)
     }
 }

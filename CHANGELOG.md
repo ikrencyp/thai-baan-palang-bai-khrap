@@ -2,6 +2,11 @@
 
 Each release gets a `## x.y.z` heading and a few short `- ` lines. The update dialog shows the first four.
 
+## 1.1.1
+- Installing an update shows its three steps (Download, Prepare, Install and restart) in the progress window, the finished ones ticked, so you see how far it is
+- Includes 1.1.0: Power rules > Screen > Look present at the screen keeps you from showing as away in chat apps while Keep awake is on (off by default)
+- Find it: Power rules > Screen > Look present at the screen
+
 ## 1.1.0
 - New Power rules > Screen > Look present at the screen (off by default): while Keep awake is on, the Mac does not look idle to other apps, so a chat app does not show you as away when you step out; switch it off and everything goes back to how it was
 - It sends one tiny mouse event with no movement a minute, so macOS asks once for the Accessibility permission; nothing is sent while Keep awake is off, or while the lid is shut or the screen is locked with the screen-off rule on

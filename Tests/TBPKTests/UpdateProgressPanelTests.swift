@@ -26,4 +26,18 @@ final class UpdateProgressPanelTests: XCTestCase {
         UpdateProgressPanel.hide()
         XCTAssertFalse(UpdateProgressPanel.isShowing)
     }
+
+    func testInstallStepsTickTheFinishedOnesAndMarkTheCurrentOne() {
+        let texts = UpdateProgressPanel.Step.allCases.map { UpdateProgressPanel.stepText($0, current: .prepare).string }
+        XCTAssertEqual(texts, ["\u{2713} Download", "\u{25CF} Prepare", "\u{25CB} Install and restart"])
+    }
+
+    func testTheStepRowMakesTheWindowTallerAndDisappearsWithoutAStep() throws {
+        UpdateProgressPanel.show("Installing", detail: "wait")
+        let plain = try XCTUnwrap(UpdateProgressPanel.contentSize)
+        UpdateProgressPanel.show("Installing", detail: "wait", step: .install)
+        let stepped = try XCTUnwrap(UpdateProgressPanel.contentSize)
+        UpdateProgressPanel.hide()
+        XCTAssertGreaterThan(stepped.height, plain.height)
+    }
 }

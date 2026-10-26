@@ -138,7 +138,7 @@ final class UpdateCoordinator {
         Task {
             if UpdateStore.downloadedRoot(for: version) == nil {
                 UpdateProgressPanel.show("Downloading version \(version.text)…",
-                                         detail: "The app restarts by itself when the update is installed.")
+                                         detail: "The app restarts by itself when the update is installed.", step: .download)
                 let ok = await download(version)
                 guard ok else {
                     UpdateProgressPanel.hide()
@@ -156,7 +156,7 @@ final class UpdateCoordinator {
             }
             // Keep awake is turned off here, where a failure can be shown, not inside the quit: a quit that is
             // refused or waits for a password would leave the app open and the install waiting for nothing.
-            UpdateProgressPanel.show("Preparing to install…", detail: "Keep awake is turned off first.")
+            UpdateProgressPanel.show("Preparing to install…", detail: "Keep awake is turned off first.", step: .prepare)
             switch await PowerManager.shared.restoreBeforeQuit() {
             case .restored: break
             case .cancelled:
@@ -167,7 +167,7 @@ final class UpdateCoordinator {
                               "Keep awake could not be turned off, so the app was not closed.\n\n\(reason)")
             }
             do {
-                UpdateProgressPanel.show("Installing version \(version.text)…", detail: "The app closes now and opens again in a moment.")
+                UpdateProgressPanel.show("Installing version \(version.text)…", detail: "The app closes now and opens again in a moment.", step: .install)
                 try UpdateInstaller.installAfterQuit(checkout, script: script)
                 UpdateStore.clearDownload()
                 NSApp.terminate(nil)

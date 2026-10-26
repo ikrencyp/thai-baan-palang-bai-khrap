@@ -4,7 +4,7 @@
 
 A small free app that sits in the menu bar. Turn it on, and your Mac stays awake even with the lid shut. Turn it off, and the Mac sleeps like normal again.
 
-Version 1.2.1 · macOS 13 or newer · Apple Silicon and Intel · MIT License
+Version 1.2.2 · macOS 13 or newer · Apple Silicon and Intel · MIT License
 
 ## Why I made it
 
@@ -62,7 +62,7 @@ You need Xcode or the Command Line Tools, nothing else.
 ```bash
 git clone https://github.com/ikrencyp/thai-baan-palang-bai-khrap.git
 cd thai-baan-palang-bai-khrap
-./build.sh      # runs the tests and builds dist/TBPK-1.2.1.dmg
+./build.sh      # runs the tests and builds dist/TBPK-1.2.2.dmg
 ./install.sh    # installs it
 ```
 

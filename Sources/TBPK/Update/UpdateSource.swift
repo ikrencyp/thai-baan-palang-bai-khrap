@@ -76,7 +76,7 @@ enum UpdateSource {
 
     // Downloads the dmg, its checksum and its signature, refuses a dmg that does not match either, and lifts `install.sh` out of the dmg
     // so the finished folder looks like the one install.sh expects.
-    // `progress` goes from 0 to 1 and never back: the dmg is nearly all of the work, so its share is what is reported.
+    // `progress` goes from 0 to 1 and never back: it is the share of the dmg that has arrived, and 1 once it is checked.
     static func fetch(_ latest: Latest, in base: URL = FileManager.default.temporaryDirectory,
                       key: Data = ReleaseSignature.trustedKey, progress: (@Sendable (Double) -> Void)? = nil) async -> ReleaseCheckout? {
         let root = base.appendingPathComponent("tbpk-update-\(UUID().uuidString)")
@@ -104,10 +104,7 @@ enum UpdateSource {
     }
 
     private static func download(_ url: URL, to file: URL, progress: (@Sendable (Double) -> Void)?) async throws {
-        let (temp, response) = try await URLSession.shared.download(from: url, delegate: progress.map(DownloadShare.init))
-        if let http = response as? HTTPURLResponse, http.statusCode != 200 { throw URLError(.badServerResponse) }
-        try? FileManager.default.removeItem(at: file)
-        try FileManager.default.moveItem(at: temp, to: file)
+        try await DownloadTransfer(to: file, report: progress).run(url)
     }
 
     // The checksum file is the output of `shasum -a 256`: the hex digest first, then the file name.
@@ -141,27 +138,71 @@ enum UpdateSource {
     }
 }
 
-// Reports how much of a download is in. It keeps the highest value, so a late report never moves the bar back,
-// and stops at 0.95: the rest is the checksum and signature checks, which end with the 1 from `fetch`.
-private final class DownloadShare: NSObject, URLSessionDownloadDelegate, @unchecked Sendable {
-    private let report: @Sendable (Double) -> Void
+// One download of the dmg, with the share that is really in reported as the bytes arrive: bytes written over the
+// size the server announced. The task delegate of the async download call does not report this reliably, so the
+// transfer owns its session. The share only goes up, and stays quiet when the server does not announce a size
+// (the bar then keeps spinning instead of showing a number that is made up).
+private final class DownloadTransfer: NSObject, URLSessionDownloadDelegate, @unchecked Sendable {
+    private let destination: URL
+    private let report: (@Sendable (Double) -> Void)?
     private let lock = NSLock()
     private var highest = 0.0
+    private var continuation: CheckedContinuation<Void, Error>?
+    private var failure: Error?
 
-    init(_ report: @escaping @Sendable (Double) -> Void) {
+    init(to destination: URL, report: (@Sendable (Double) -> Void)?) {
+        self.destination = destination
         self.report = report
+    }
+
+    func run(_ url: URL) async throws {
+        let session = URLSession(configuration: .ephemeral, delegate: self, delegateQueue: nil)
+        defer { session.finishTasksAndInvalidate() }
+        try await withCheckedThrowingContinuation { (waiting: CheckedContinuation<Void, Error>) in
+            lock.lock()
+            continuation = waiting
+            lock.unlock()
+            session.downloadTask(with: url).resume()
+        }
     }
 
     func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didWriteData bytesWritten: Int64,
                     totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
-        guard totalBytesExpectedToWrite > 0 else { return }
-        let share = min(0.95, Double(totalBytesWritten) / Double(totalBytesExpectedToWrite) * 0.95)
+        guard let report, totalBytesExpectedToWrite > 0 else { return }
+        let share = min(1, Double(totalBytesWritten) / Double(totalBytesExpectedToWrite))
         lock.lock()
-        let isNew = share > highest + 0.004
+        let isNew = share > highest
         if isNew { highest = share }
         lock.unlock()
         if isNew { report(share) }
     }
 
-    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {}
+    // The temporary file is gone when this returns, so it is moved here.
+    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
+        if let http = downloadTask.response as? HTTPURLResponse, http.statusCode != 200 {
+            fail(URLError(.badServerResponse))
+            return
+        }
+        do {
+            try? FileManager.default.removeItem(at: destination)
+            try FileManager.default.moveItem(at: location, to: destination)
+        } catch {
+            fail(error)
+        }
+    }
+
+    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        lock.lock()
+        let waiting = continuation
+        continuation = nil
+        let problem = error ?? failure
+        lock.unlock()
+        if let problem { waiting?.resume(throwing: problem) } else { waiting?.resume() }
+    }
+
+    private func fail(_ error: Error) {
+        lock.lock()
+        failure = error
+        lock.unlock()
+    }
 }

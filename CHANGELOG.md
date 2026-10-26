@@ -2,6 +2,9 @@
 
 Each release gets a `## x.y.z` heading and a few short `- ` lines. The update dialog shows the first four.
 
+## 1.2.2
+- The percent in the update window follows the real download now: it counts the bytes that have arrived against the size GitHub announces, climbs step by step to 100%, and keeps spinning instead of showing a made-up number when the size is not known
+
 ## 1.2.1
 - What's new has a new layout: a header with the app icon and your version, one card per release with the changes in a clear list, and a tinted "Where to find it" row with the menu path and the Show me where button
 - How to use has a new layout too: numbered quick-start steps, a card that explains each leaf, and one card per menu item with its own icon

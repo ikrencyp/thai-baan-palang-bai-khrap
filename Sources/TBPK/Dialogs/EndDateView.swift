@@ -83,11 +83,11 @@ struct EndDateView: View {
     // After What's new pointed here, the new row is tinted and tagged so the eye lands on it.
     private var minutesRow: some View {
         HStack(spacing: 10) {
-            Text("And").foregroundStyle(model.tipsMinutes ? Color(nsColor: MenuHighlight.newColor) : Color.secondary)
+            Text("And").foregroundStyle(model.tipsMinutes ? Color(nsColor: MenuHighlight.hereColor) : Color.secondary)
             if model.tipsMinutes {
-                Text("NEW").font(.caption2.weight(.bold)).foregroundStyle(.white)
+                Text(MenuHighlight.hereLabel.uppercased()).font(.caption2.weight(.bold)).foregroundStyle(.white)
                     .padding(.horizontal, 6).padding(.vertical, 2)
-                    .background(Capsule().fill(Color(nsColor: MenuHighlight.newColor)))
+                    .background(Capsule().fill(Color(nsColor: MenuHighlight.hereColor)))
             }
             Spacer()
             TextField("", value: $model.extraMinutes, format: .number.grouping(.never))
@@ -99,7 +99,7 @@ struct EndDateView: View {
             Text("minutes").frame(width: 100, alignment: .leading)
     }
         .padding(model.tipsMinutes ? 8 : 0)
-        .background(RoundedRectangle(cornerRadius: 8).fill(Color(nsColor: MenuHighlight.newColor).opacity(model.tipsMinutes ? 0.14 : 0)))
+        .background(RoundedRectangle(cornerRadius: 8).fill(Color(nsColor: MenuHighlight.hereColor).opacity(model.tipsMinutes ? 0.14 : 0)))
     }
 
     private func timeControls(now: Date) -> some View {

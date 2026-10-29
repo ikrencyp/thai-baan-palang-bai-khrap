@@ -39,6 +39,6 @@ struct HelpTopic: Identifiable, Equatable {
                   detail: "Leaf colour: two colours, On the charger and On battery, each one of nine named colours or a colour code you type such as #FF8800; the leaf shows them while Keep awake is on, and an alert shows the battery colour. Quitting the app always gives the Mac back its previous sleep setting."),
         HelpTopic(id: "whatsnew", symbol: "sparkles", title: "What\u{2019}s new",
                   summary: "What changed in each version of the app.",
-                  detail: "It opens by itself once after an update, and any time from the menu or the About window."),
+                  detail: "It opens by itself once after an update, and any time from the menu or the About window. Each release says where its change lives; Show me where opens the menu and walks the way step by step, ending on the item marked Here."),
     ]
 }

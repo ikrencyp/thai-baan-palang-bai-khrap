@@ -2,6 +2,12 @@
 
 Each release gets a `## x.y.z` heading and a few short `- ` lines. The update dialog shows the first four.
 
+## 1.2.4
+- The leaf now crackles with lightning in time with its beat, the same bolts on the charger and on battery: pale blue with a white heart, flashing on the strong part of each beat
+- Show me where walks the way one step at a time (Step 1 of 3, then 2, then 3) and then lights all of it; the last stop says Here and the ones to open say Open, and with Reduce Motion on the whole route stays lit and still
+- The word New is gone from the menu and from the minutes row: What's new shows the way instead, and the way is orange and the last stop is green and says Here
+- Find it: What’s new
+
 ## 1.2.3
 - For how long takes hours and minutes together: a new And ... minutes row sits under Or any length, so 1 hour 30 minutes or 45 minutes is one choice, and the end time updates as you type
 - The leaf burns with the gold aura and the lightning around it on battery too, the same as on the charger, and a leaf that does not beat (Power saver, Reduce Motion) holds that look steadily

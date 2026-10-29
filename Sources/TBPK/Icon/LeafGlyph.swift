@@ -75,8 +75,8 @@ enum LeafGlyph {
         let leaf = silhouette(in: rect)
         let aura = max(glow, Transformation.aura(at: burst))
         if aura > 0 { drawAura(in: rect, color: flame, strength: min(aura, 1.4)) }
-        drawSparks(Transformation.sparks(at: burst), in: bounds, color: flame)
-        if glow > 0 { drawSteadyBolts(strength: aura, in: bounds, color: flame) }
+        drawSparks(Transformation.sparks(at: burst), in: bounds)
+        if glow > 0 { drawSteadyBolts(strength: 0.4 + 0.5 * min(glow, 1), in: bounds) }
         // Charging turns the leaf white-hot before it settles into its colour.
         let hot = color.blended(withFraction: CGFloat(max(charge, flash)), of: .white) ?? color
         let ink = hot.withAlphaComponent(CGFloat(alpha))
@@ -156,36 +156,40 @@ enum LeafGlyph {
         core.fill()
     }
 
-    private static let boltPaths: [(angle: Double, kinks: [Double])] = [(0.5, [0.3, -0.35, 0.25]), (2.5, [-0.3, 0.3, -0.25]), (4.2, [0.35, -0.3, 0.3]), (5.6, [-0.25, 0.35, -0.3])]
+    // Lightning in the artwork is pale blue with a white heart.
+    private static let boltBlue = NSColor(srgbRed: 0.45, green: 0.86, blue: 1, alpha: 1)
+    private static let boltPaths: [(angle: Double, kinks: [Double])] = [(0.5, [0.3, -0.35, 0.25]), (1.5, [-0.3, 0.35, -0.2]), (2.5, [-0.3, 0.3, -0.25]), (3.4, [0.3, -0.3, 0.3]), (4.2, [0.35, -0.3, 0.3]), (5.6, [-0.25, 0.35, -0.3])]
 
     // Short bolts that crackle off the leaf while it powers up: `progress` runs 0...1 over the sparks' life.
-    private static func drawSparks(_ progress: Double, in bounds: NSRect, color: NSColor) {
+    private static func drawSparks(_ progress: Double, in bounds: NSRect) {
         guard progress > 0, progress < 1 else { return }
-        drawBolts(reach: 7 + 5 * CGFloat(progress), alpha: CGFloat(1 - progress), in: bounds, color: color)
+        drawBolts(reach: 9 + 2 * CGFloat(progress), alpha: CGFloat(1 - progress), in: bounds)
     }
 
-    // While the aura burns, lightning crackles around the leaf, on the charger and on battery alike: it flashes hardest
-    // on the strong part of a beat and stays on when the leaf does not beat.
-    private static func drawSteadyBolts(strength: Double, in bounds: NSRect, color: NSColor) {
+    // While the leaf beats, lightning crackles around the whole leaf, on the charger and on battery alike: all the bolts,
+    // flashing hardest on the strong part of the beat and fading between them.
+    private static func drawSteadyBolts(strength: Double, in bounds: NSRect) {
         let alpha = CGFloat((strength - 0.55) / 0.45)
         guard alpha > 0 else { return }
-        drawBolts(reach: 10, alpha: min(alpha, 1), in: bounds, color: color)
+        drawBolts(reach: 11, alpha: min(alpha, 1), in: bounds)
     }
 
-    private static func drawBolts(reach: CGFloat, alpha: CGFloat, in bounds: NSRect, color: NSColor) {
-        let bolt = NSColor.white.blended(withFraction: 0.35, of: color) ?? .white
+    private static func drawBolts(reach: CGFloat, alpha: CGFloat, in bounds: NSRect) {
         for (angle, kinks) in boltPaths {
             let path = NSBezierPath()
-            path.move(to: NSPoint(x: bounds.midX + CGFloat(cos(angle)) * 5, y: bounds.midY + CGFloat(sin(angle)) * 5))
+            path.move(to: NSPoint(x: bounds.midX + CGFloat(cos(angle)) * 6.5, y: bounds.midY + CGFloat(sin(angle)) * 6.5))
             for (index, kink) in kinks.enumerated() {
-                let along = 5 + (reach - 5) * CGFloat(index + 1) / CGFloat(kinks.count)
+                let along = 6.5 + (reach - 6.5) * CGFloat(index + 1) / CGFloat(kinks.count)
                 let bent = angle + kink
                 path.line(to: NSPoint(x: bounds.midX + CGFloat(cos(bent)) * along, y: bounds.midY + CGFloat(sin(bent)) * along))
             }
-            path.lineWidth = 1.1
             path.lineCapStyle = .round
             path.lineJoinStyle = .round
-            bolt.withAlphaComponent(alpha).setStroke()
+            path.lineWidth = 1.5
+            boltBlue.withAlphaComponent(alpha * 0.9).setStroke()
+            path.stroke()
+            path.lineWidth = 0.6
+            NSColor.white.withAlphaComponent(alpha).setStroke()
             path.stroke()
         }
     }

@@ -97,8 +97,8 @@ final class LeafColorTests: XCTestCase {
             var count = 0
             for x in 0..<rep.pixelsWide {
                 for y in 0..<rep.pixelsHigh {
-                    guard let c = rep.colorAt(x: x, y: y)?.usingColorSpace(.sRGB), c.alphaComponent > 0.3 else { continue }
-                    if c.redComponent > 0.9, c.greenComponent > 0.9, c.blueComponent > 0.6 { count += 1 }
+                    guard let c = rep.colorAt(x: x, y: y)?.usingColorSpace(.sRGB), c.alphaComponent > 0.5 else { continue }
+                    if c.blueComponent > 0.9, c.redComponent < 0.8 { count += 1 }
                 }
             }
             return count

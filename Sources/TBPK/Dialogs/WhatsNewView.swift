@@ -107,7 +107,7 @@ struct WhatsNewView: View {
             Spacer(minLength: 8)
             Button("Show me where") { showMenu(path) }
                 .controlSize(.small)
-                .help("Opens the menu with a tag on each step of the way")
+                .help("Opens the menu and walks you along the way, one step at a time")
         }
         .padding(10)
         .background(RoundedRectangle(cornerRadius: 8).fill(Color.accentColor.opacity(0.1)))

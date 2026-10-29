@@ -4,7 +4,7 @@ import SwiftUI
 enum AppInfo {
     static let name = "Thai Baan Palang Bai Khrap"
     static let shortName = "TBPK"
-    static let fallbackVersion = "1.2.2"
+    static let fallbackVersion = "1.2.3"
 
     static var version: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? fallbackVersion

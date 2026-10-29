@@ -4,7 +4,7 @@
 
 A small free app that sits in the menu bar. Turn it on, and your Mac stays awake even with the lid shut. Turn it off, and the Mac sleeps like normal again.
 
-Version 1.2.2 · macOS 13 or newer · Apple Silicon and Intel · MIT License
+Version 1.2.3 · macOS 13 or newer · Apple Silicon and Intel · MIT License
 
 ## Why I made it
 
@@ -18,7 +18,7 @@ The idea comes from [Amphetamine](https://apps.apple.com/app/amphetamine/id93798
 
 - Sits in the menu bar. No dock icon.
 - The leaf is the switch. An outline leaf means normal sleep. A leaf in a golden flame means the Mac is being kept awake: green on the charger and red when it is not charging, unless you pick other colours in Settings. It lights up with a flash when you turn it on, then beats slowly like a heart.
-- Stay awake for 30 minutes, 1, 2, 4, 8 or 12 hours, any time you type, until a date and time, or until you turn it off.
+- Stay awake for 30 minutes, 1, 2, 4, 8 or 12 hours, any time you type (hours and minutes together), until a date and time, or until you turn it off.
 - Plays a warning sound if the Mac is awake with the lid shut or the screen locked, so you do not forget it in your bag. The sound comes from the Mac's own speaker, not from Bluetooth headphones or AirPods.
 - Can go back to normal sleep by itself when the battery runs low or you pull the charger (you choose; it is off until you turn it on).
 - Can keep you looking present while you are away: chat apps do not flip you to "away" when you step out (off until you turn it on).
@@ -62,7 +62,7 @@ You need Xcode or the Command Line Tools, nothing else.
 ```bash
 git clone https://github.com/ikrencyp/thai-baan-palang-bai-khrap.git
 cd thai-baan-palang-bai-khrap
-./build.sh      # runs the tests and builds dist/TBPK-1.2.2.dmg
+./build.sh      # runs the tests and builds dist/TBPK-1.2.3.dmg
 ./install.sh    # installs it
 ```
 

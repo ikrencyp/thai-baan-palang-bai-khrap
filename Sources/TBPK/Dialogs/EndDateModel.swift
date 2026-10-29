@@ -32,6 +32,8 @@ final class EndDateModel: ObservableObject {
     @Published var mode: Mode
     @Published var amount: Int
     @Published var unit: EndDateUnit
+    // Minutes on top of the amount, so "1 hour 30 minutes" is one choice.
+    @Published var extraMinutes: Int
     @Published var day: Date
     @Published var clockHour: Int
     @Published var clockMinute: Int
@@ -44,6 +46,7 @@ final class EndDateModel: ObservableObject {
         mode = start == nil ? (stored ?? .duration) : .time
         amount = 1
         unit = .hours
+        extraMinutes = 0
         let seed = start ?? now.addingTimeInterval(3_600)
         day = calendar.startOfDay(for: seed)
         clockHour = calendar.component(.hour, from: seed)
@@ -53,10 +56,12 @@ final class EndDateModel: ObservableObject {
 
     func moment(now: Date) -> Date? {
         switch mode {
-        case .duration: return unit.moment(after: amount, from: now)
+        case .duration: return EndDateUnit.moment(afterMinutes: lengthMinutes, from: now)
         case .time: return EndDateMoment.combine(day: day, hour: clockHour, minute: clockMinute, calendar: calendar)
         }
     }
+
+    var lengthMinutes: Int { amount * unit.minutes + extraMinutes }
 
     func isAhead(now: Date) -> Bool {
         guard let moment = moment(now: now) else { return false }
@@ -82,10 +87,11 @@ final class EndDateModel: ObservableObject {
     func applyChip(minutes: Int) {
         mode = .duration
         (amount, unit) = Self.split(minutes: minutes)
+        extraMinutes = 0
     }
 
     func isChipSelected(_ chip: Chip) -> Bool {
-        mode == .duration && amount * unit.minutes == chip.minutes
+        mode == .duration && lengthMinutes == chip.minutes
     }
 
     func applyClock(hour: Int, now: Date) {
@@ -140,7 +146,8 @@ final class EndDateModel: ObservableObject {
 
     // Pulls every field back to something that is still ahead: nothing earlier than now can stay selected.
     func normalize(now: Date) {
-        amount = min(max(amount, 1), EndDateUnit.largestAmount)
+        amount = min(max(amount, 0), EndDateUnit.largestAmount)
+        extraMinutes = min(max(extraMinutes, 0), 59)
         day = max(calendar.startOfDay(for: day), firstSelectableDay(now: now))
         clockHour = min(max(clockHour, hourRange(now: now).lowerBound), 23)
         clockMinute = min(max(clockMinute, minuteRange(now: now).lowerBound), 59)
@@ -150,7 +157,7 @@ final class EndDateModel: ObservableObject {
     // A date days away would not come round again, so it is not remembered.
     func pick(now: Date) -> EndDatePick? {
         switch mode {
-        case .duration: return .duration(minutes: amount * unit.minutes)
+        case .duration: return lengthMinutes > 0 ? .duration(minutes: lengthMinutes) : nil
         case .time:
             guard let moment = moment(now: now), moment > now, moment.timeIntervalSince(now) <= 24 * 3_600 else { return nil }
             return .clock(hour: clockHour, minute: clockMinute)

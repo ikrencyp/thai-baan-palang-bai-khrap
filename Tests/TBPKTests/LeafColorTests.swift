@@ -87,6 +87,26 @@ final class LeafColorTests: XCTestCase {
         XCTAssertGreaterThan(pinkPixels, 30)
     }
 
+    // On battery the leaf burns like it does on the charger: the gold aura with its lightning, even when it does not beat.
+    func testTheAuraAndLightningShowOnBatteryToo() throws {
+        func boltPixels(alerting: Bool) throws -> Int {
+            var image: NSImage?
+            let animator = StatusIconAnimator { image = $0 }
+            animator.retarget(IconTarget(awake: true, busy: false, failed: false, alerting: alerting, beating: false), animated: false)
+            let rep = NSBitmapImageRep(cgImage: try XCTUnwrap(image?.cgImage(forProposedRect: nil, context: nil, hints: nil)))
+            var count = 0
+            for x in 0..<rep.pixelsWide {
+                for y in 0..<rep.pixelsHigh {
+                    guard let c = rep.colorAt(x: x, y: y)?.usingColorSpace(.sRGB), c.alphaComponent > 0.3 else { continue }
+                    if c.redComponent > 0.9, c.greenComponent > 0.9, c.blueComponent > 0.6 { count += 1 }
+                }
+            }
+            return count
+        }
+        XCTAssertGreaterThan(try boltPixels(alerting: true), 0, "lightning around the leaf on battery")
+        XCTAssertEqual(Double(try boltPixels(alerting: true)), Double(try boltPixels(alerting: false)), accuracy: 4, "same look on the charger")
+    }
+
     func testSettingsHoldsTheLeafColourMenu() throws {
         let settings = try XCTUnwrap(SettingsMenu.item(target: StubMenuTarget()).submenu)
         XCTAssertTrue(settings.items.contains { $0.title == "Leaf colour" })

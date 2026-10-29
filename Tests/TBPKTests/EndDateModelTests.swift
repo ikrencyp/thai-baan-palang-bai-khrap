@@ -52,12 +52,33 @@ final class EndDateModelTests: XCTestCase {
         XCTAssertFalse(EndDateModel.chips.contains { m.isChipSelected($0) })
     }
 
-    func testALengthBelowOneIsPulledUpToOne() {
+    func testHoursAndMinutesAddUp() throws {
         let m = model()
-        m.amount = 0; m.normalize(now: now)
-        XCTAssertEqual(m.amount, 1)
-        m.amount = -4; m.normalize(now: now)
-        XCTAssertEqual(m.amount, 1)
+        m.amount = 1; m.unit = .hours; m.extraMinutes = 30
+        XCTAssertEqual(m.lengthMinutes, 90)
+        XCTAssertEqual(try XCTUnwrap(m.moment(now: now)).timeIntervalSince(now), 5_400, accuracy: 60)
+        XCTAssertEqual(m.pick(now: now), .duration(minutes: 90))
+        XCTAssertFalse(EndDateModel.chips.contains { m.isChipSelected($0) })
+        m.amount = 0; m.extraMinutes = 45
+        XCTAssertEqual(try XCTUnwrap(m.moment(now: now)).timeIntervalSince(now), 2_700, accuracy: 60)
+    }
+
+    func testAChipClearsTheExtraMinutes() {
+        let m = model()
+        m.extraMinutes = 20
+        m.applyChip(minutes: 120)
+        XCTAssertEqual(m.extraMinutes, 0)
+        XCTAssertTrue(m.isChipSelected(EndDateModel.chips[2]))
+    }
+
+    func testAnEmptyLengthIsNotAheadAndNegativesAreClamped() {
+        let m = model()
+        m.amount = 0; m.extraMinutes = 0; m.normalize(now: now)
+        XCTAssertFalse(m.isAhead(now: now))
+        XCTAssertNil(m.pick(now: now))
+        m.amount = -4; m.extraMinutes = 75; m.normalize(now: now)
+        XCTAssertEqual(m.amount, 0)
+        XCTAssertEqual(m.extraMinutes, 59)
         m.amount = 100_000; m.normalize(now: now)
         XCTAssertEqual(m.amount, EndDateUnit.largestAmount)
     }

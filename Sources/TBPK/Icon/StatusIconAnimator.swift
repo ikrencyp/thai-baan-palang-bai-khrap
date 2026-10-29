@@ -164,7 +164,8 @@ final class StatusIconAnimator {
         let pop = 1 + motion.overshoot * 1.1 - motion.undershoot * 0.9
         let shimmer = animated && target.busy ? 0.7 + 0.3 * sin(now * 9) : 1
         let powered = motion.fill > 0.35
-        let glow = powered ? (0.45 + 0.55 * min(pulse, 1.2) / 1.2) * (0.6 + 0.4 * intensity) : 0
+        // The aura burns in every power state, on battery too; a leaf that does not beat holds the strong part of the beat.
+        let glow = powered ? (!beating(settledOnLeaf) ? 1 : (0.45 + 0.55 * min(pulse, 1.2) / 1.2) * (0.6 + 0.4 * intensity)) : 0
         let look = Look(fill: motion.drawnFill, scale: beat * pop, alpha: shimmer, burst: burstProgress ?? 0, glow: glow,
                         tint: target.alerting ? .alert : (powered || burstProgress != nil ? .power : .none),
                         leaf: target.leaf, batteryLeaf: target.batteryLeaf)

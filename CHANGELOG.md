@@ -2,6 +2,11 @@
 
 Each release gets a `## x.y.z` heading and a few short `- ` lines. The update dialog shows the first four.
 
+## 1.2.3
+- For how long takes hours and minutes together: a new And ... minutes row sits under Or any length, so 1 hour 30 minutes or 45 minutes is one choice, and the end time updates as you type
+- The leaf burns with the gold aura and the lightning around it on battery too, the same as on the charger, and a leaf that does not beat (Power saver, Reduce Motion) holds that look steadily
+- Find it: Stay awake for > At a date and time…
+
 ## 1.2.2
 - The percent in the update window follows the real download now: it counts the bytes that have arrived against the size GitHub announces, climbs step by step to 100%, and keeps spinning instead of showing a made-up number when the size is not known
 

@@ -24,19 +24,11 @@ enum EndDateUnit: CaseIterable {
         }
     }
 
-    private var seconds: TimeInterval {
-        switch self {
-        case .minutes: return 60
-        case .hours: return 3_600
-        case .days: return 86_400
-        case .weeks: return 604_800
-        }
-    }
-
-    func moment(after amount: Int, from now: Date, calendar: Calendar = .current) -> Date? {
-        guard amount > 0, amount <= Self.largestAmount else { return nil }
+    // `total` is the whole length in minutes (an amount of this unit plus any extra minutes); the seconds are dropped.
+    static func moment(afterMinutes total: Int, from now: Date, calendar: Calendar = .current) -> Date? {
+        guard total > 0 else { return nil }
         let parts = calendar.dateComponents(
-            [.year, .month, .day, .hour, .minute], from: now.addingTimeInterval(Double(amount) * seconds))
+            [.year, .month, .day, .hour, .minute], from: now.addingTimeInterval(Double(total) * 60))
         return calendar.date(from: parts)
     }
 

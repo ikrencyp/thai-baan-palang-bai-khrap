@@ -69,12 +69,23 @@ struct EndDateView: View {
                     .frame(width: 64)
                     .textFieldStyle(.roundedBorder)
                     .onChange(of: model.amount) { _ in model.normalize(now: Date()) }
-                Stepper("", value: $model.amount, in: 1...EndDateUnit.largestAmount).labelsHidden()
+                Stepper("", value: $model.amount, in: 0...EndDateUnit.largestAmount).labelsHidden()
                 Picker("", selection: $model.unit) {
                     ForEach(EndDateUnit.allCases, id: \.self) { Text($0.label).tag($0) }
                 }
                 .labelsHidden()
                 .frame(width: 100)
+            }
+            HStack(spacing: 10) {
+                Text("And").foregroundStyle(.secondary)
+                Spacer()
+                TextField("", value: $model.extraMinutes, format: .number.grouping(.never))
+                    .multilineTextAlignment(.trailing)
+                    .frame(width: 64)
+                    .textFieldStyle(.roundedBorder)
+                    .onChange(of: model.extraMinutes) { _ in model.normalize(now: Date()) }
+                Stepper("", value: $model.extraMinutes, in: 0...59).labelsHidden()
+                Text("minutes").frame(width: 100, alignment: .leading)
             }
         }
     }

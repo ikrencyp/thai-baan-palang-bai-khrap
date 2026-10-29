@@ -34,6 +34,8 @@ final class EndDateModel: ObservableObject {
     @Published var unit: EndDateUnit
     // Minutes on top of the amount, so "1 hour 30 minutes" is one choice.
     @Published var extraMinutes: Int
+    // Tells the window to mark the minutes row as new, after What's new pointed here.
+    var tipsMinutes = false
     @Published var day: Date
     @Published var clockHour: Int
     @Published var clockMinute: Int

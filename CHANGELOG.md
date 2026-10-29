@@ -5,6 +5,7 @@ Each release gets a `## x.y.z` heading and a few short `- ` lines. The update di
 ## 1.2.3
 - For how long takes hours and minutes together: a new And ... minutes row sits under Or any length, so 1 hour 30 minutes or 45 minutes is one choice, and the end time updates as you type
 - The leaf burns with the gold aura and the lightning around it on battery too, the same as on the charger, and a leaf that does not beat (Power saver, Reduce Motion) holds that look steadily
+- Show me where is clearer: the steps on the way are blue, the new item is orange, and the window it opens marks the new minutes row with an orange NEW tag
 - Find it: Stay awake for > At a date and time…
 
 ## 1.2.2

@@ -377,7 +377,7 @@ final class StatusItemController: NSObject, StatusMenuTarget {
 
     @objc func whatsNewClicked() {
         WhatsNewWindow.show { [weak self] findIt in
-            MenuHighlight.path = MenuHighlight.steps(of: findIt)
+            MenuHighlight.begin(findIt)
             self?.statusItem.button?.performClick(nil)
         }
     }

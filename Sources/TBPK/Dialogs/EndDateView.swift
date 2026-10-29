@@ -76,18 +76,30 @@ struct EndDateView: View {
                 .labelsHidden()
                 .frame(width: 100)
             }
-            HStack(spacing: 10) {
-                Text("And").foregroundStyle(.secondary)
-                Spacer()
-                TextField("", value: $model.extraMinutes, format: .number.grouping(.never))
-                    .multilineTextAlignment(.trailing)
-                    .frame(width: 64)
-                    .textFieldStyle(.roundedBorder)
-                    .onChange(of: model.extraMinutes) { _ in model.normalize(now: Date()) }
-                Stepper("", value: $model.extraMinutes, in: 0...59).labelsHidden()
-                Text("minutes").frame(width: 100, alignment: .leading)
-            }
+            minutesRow
         }
+    }
+
+    // After What's new pointed here, the new row is tinted and tagged so the eye lands on it.
+    private var minutesRow: some View {
+        HStack(spacing: 10) {
+            Text("And").foregroundStyle(model.tipsMinutes ? Color(nsColor: MenuHighlight.newColor) : Color.secondary)
+            if model.tipsMinutes {
+                Text("NEW").font(.caption2.weight(.bold)).foregroundStyle(.white)
+                    .padding(.horizontal, 6).padding(.vertical, 2)
+                    .background(Capsule().fill(Color(nsColor: MenuHighlight.newColor)))
+            }
+            Spacer()
+            TextField("", value: $model.extraMinutes, format: .number.grouping(.never))
+                .multilineTextAlignment(.trailing)
+                .frame(width: 64)
+                .textFieldStyle(.roundedBorder)
+                .onChange(of: model.extraMinutes) { _ in model.normalize(now: Date()) }
+            Stepper("", value: $model.extraMinutes, in: 0...59).labelsHidden()
+            Text("minutes").frame(width: 100, alignment: .leading)
+    }
+        .padding(model.tipsMinutes ? 8 : 0)
+        .background(RoundedRectangle(cornerRadius: 8).fill(Color(nsColor: MenuHighlight.newColor).opacity(model.tipsMinutes ? 0.14 : 0)))
     }
 
     private func timeControls(now: Date) -> some View {

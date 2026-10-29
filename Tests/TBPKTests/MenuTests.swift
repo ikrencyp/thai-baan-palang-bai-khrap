@@ -180,4 +180,12 @@ final class MenuTests: XCTestCase {
         XCTAssertEqual(content.title, power.isSleepDisabled ? "Staying awake" : "Normal sleep")
         XCTAssertEqual(MenuHeader.content(power: power, alerting: true).detail == "Left running on battery.", power.isSleepDisabled)
     }
+
+    func testAWayThatEndsAtTheEndDateItemTipsTheMinutesRowOnce() {
+        MenuHighlight.begin("Stay awake for > At a date and time…")
+        XCTAssertTrue(MenuHighlight.endDateTip)
+        MenuHighlight.begin("Settings > Leaf colour")
+        XCTAssertFalse(MenuHighlight.endDateTip)
+        MenuHighlight.path = []
+    }
 }

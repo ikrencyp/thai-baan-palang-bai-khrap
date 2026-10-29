@@ -15,7 +15,10 @@ final class EndDateWindow: NSObject, NSWindowDelegate {
             NSApp.activate(ignoringOtherApps: true)
             return
         }
-        let next = EndDateWindow(model: EndDateModel(start: defaultDate), onSet: onSet)
+        let model = EndDateModel(start: defaultDate)
+        model.tipsMinutes = MenuHighlight.endDateTip
+        MenuHighlight.endDateTip = false
+        let next = EndDateWindow(model: model, onSet: onSet)
         current = next
         next.show()
     }

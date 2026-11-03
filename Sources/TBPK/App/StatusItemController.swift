@@ -185,8 +185,14 @@ final class StatusItemController: NSObject, StatusMenuTarget {
     }
 
     @objc func energyProfileClicked(_ item: NSMenuItem) {
-        guard let raw = item.representedObject as? String, let profile = EnergyProfile(rawValue: raw) else { return }
-        profile.store()
+        guard let pick = item.representedObject as? EnergyProfile.Pick else { return }
+        pick.profile.store(pick.slot)
+        energy.refresh()
+        render()
+    }
+
+    @objc func energySeparateClicked(_ item: NSMenuItem) {
+        EnergyProfile.setSeparate(item.state != .on)
         energy.refresh()
         render()
     }

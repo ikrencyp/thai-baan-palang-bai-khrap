@@ -2,6 +2,11 @@
 
 Each release gets a `## x.y.z` heading and a few short `- ` lines. The update dialog shows the first four.
 
+## 1.2.5
+- Energy use can be set separately for the charger and for battery: switch on Set charger and battery separately and each power source gets its own choice, used by itself when you plug or unplug; both are remembered when you switch back to one choice for both
+- The leaf heartbeat now beats on battery and in Low Power Mode too, calm like on the charger; only Reduce Motion (and the Power saver choice) keeps the leaf still
+- Find it: Settings > Energy use
+
 ## 1.2.4
 - The leaf now crackles with lightning in time with its beat, the same bolts on the charger and on battery: pale blue with a white heart, flashing on the strong part of each beat
 - Show me where walks the way one step at a time (Step 1 of 3, then 2, then 3) and then lights all of it; the last stop says Here and the ones to open say Open, and with Reduce Motion on the whole route stays lit and still

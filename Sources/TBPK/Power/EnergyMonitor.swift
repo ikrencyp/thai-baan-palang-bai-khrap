@@ -12,7 +12,7 @@ final class EnergyMonitor: ObservableObject {
     private var observing = false
 
     private init() {
-        plan = EnergyPlan.resolve(EnergyProfile.stored(), Self.conditions())
+        plan = Self.currentPlan()
     }
 
     func start() {
@@ -31,9 +31,14 @@ final class EnergyMonitor: ObservableObject {
     }
 
     func refresh() {
-        let next = EnergyPlan.resolve(EnergyProfile.stored(), Self.conditions())
+        let next = Self.currentPlan()
         guard next != plan else { return }
         plan = next
+    }
+
+    private static func currentPlan() -> EnergyPlan {
+        let conditions = conditions()
+        return EnergyPlan.resolve(EnergyProfile.active(onBattery: conditions.onBattery), conditions)
     }
 
     static func conditions() -> EnergyPlan.Conditions {

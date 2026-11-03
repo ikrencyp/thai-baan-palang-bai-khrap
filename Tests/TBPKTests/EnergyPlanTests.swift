@@ -5,10 +5,10 @@ import XCTest
 final class EnergyPlanTests: XCTestCase {
     private typealias Conditions = EnergyPlan.Conditions
 
-    func testAutomaticIsCalmOnTheChargerAndStillWhenMacOSAsksToSave() {
+    func testAutomaticKeepsTheCalmHeartbeatOnBatteryAndIsStillOnlyWithReduceMotion() {
         XCTAssertEqual(EnergyPlan.resolve(.automatic, Conditions()), .standard)
-        XCTAssertEqual(EnergyPlan.resolve(.automatic, Conditions(onBattery: true)), .saver)
-        XCTAssertEqual(EnergyPlan.resolve(.automatic, Conditions(lowPowerMode: true)), .saver)
+        XCTAssertEqual(EnergyPlan.resolve(.automatic, Conditions(onBattery: true)), .standard)
+        XCTAssertEqual(EnergyPlan.resolve(.automatic, Conditions(onBattery: true, lowPowerMode: true)), .standard)
         XCTAssertEqual(EnergyPlan.resolve(.automatic, Conditions(reduceMotion: true)), .saver)
     }
 

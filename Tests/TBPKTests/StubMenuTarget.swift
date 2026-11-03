@@ -10,6 +10,7 @@ class StubMenuTarget: NSObject, StatusMenuTarget {
     func countdownClicked(_ item: NSMenuItem) {}
     func animationClicked(_ item: NSMenuItem) {}
     func energyProfileClicked(_ item: NSMenuItem) {}
+    func energySeparateClicked(_ item: NSMenuItem) {}
     func batteryWarningClicked(_ item: NSMenuItem) {}
     func warningPowerClicked(_ item: NSMenuItem) {}
     func powerLimitClicked(_ item: NSMenuItem) {}

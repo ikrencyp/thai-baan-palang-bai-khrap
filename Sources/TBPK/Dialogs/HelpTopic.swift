@@ -33,7 +33,7 @@ struct HelpTopic: Identifiable, Equatable {
                   detail: "Power rules > Screen. Off by default. While it is on and the Mac is held awake, a tiny no-move input goes out every minute; macOS asks once for the Accessibility permission to allow that. Switch it off and the Mac goes back to counting idle time as before."),
         HelpTopic(id: "energy", symbol: "bolt", title: "Energy use",
                   summary: "Automatic, Full performance or Power saver, in Settings.",
-                  detail: "Automatic follows macOS: a calm heartbeat on the charger, a still leaf on battery, in Low Power Mode or with Reduce Motion on. Nothing is drawn while the display is asleep."),
+                  detail: "Automatic follows macOS: a calm heartbeat on the charger and on battery, a still leaf with Reduce Motion on. Pick one choice for both power sources, or switch on Set charger and battery separately to pick one for each. Nothing is drawn while the display is asleep."),
         HelpTopic(id: "settings", symbol: "gearshape", title: "Settings",
                   summary: "Countdown in the menu bar, animation, leaf colour, energy use, Start at Login.",
                   detail: "Leaf colour: two colours, On the charger and On battery, each one of nine named colours or a colour code you type such as #FF8800; the leaf shows them while Keep awake is on, and an alert shows the battery colour. Quitting the app always gives the Mac back its previous sleep setting."),

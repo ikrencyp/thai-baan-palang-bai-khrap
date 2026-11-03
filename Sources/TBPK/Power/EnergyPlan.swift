@@ -43,8 +43,7 @@ struct EnergyPlan: Equatable {
         case .full: base = .full
         case .saver: base = .saver
         case .automatic:
-            let spare = conditions.onBattery || conditions.lowPowerMode || conditions.reduceMotion
-            base = spare ? .saver : .standard
+            base = conditions.reduceMotion ? .saver : .standard
         }
         return conditions.displayAsleep ? base.unseen : base
     }

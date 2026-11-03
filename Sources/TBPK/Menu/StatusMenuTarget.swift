@@ -9,6 +9,7 @@ import AppKit
     @objc func countdownClicked(_ item: NSMenuItem)
     @objc func animationClicked(_ item: NSMenuItem)
     @objc func energyProfileClicked(_ item: NSMenuItem)
+    @objc func energySeparateClicked(_ item: NSMenuItem)
     @objc func batteryWarningClicked(_ item: NSMenuItem)
     @objc func warningPowerClicked(_ item: NSMenuItem)
     @objc func powerLimitClicked(_ item: NSMenuItem)

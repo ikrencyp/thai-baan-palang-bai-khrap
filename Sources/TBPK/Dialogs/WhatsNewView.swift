@@ -97,7 +97,7 @@ struct WhatsNewView: View {
 
     // The short tour of a release: the way to the new thing as numbered steps (the same numbers the menu shows when
     // the way is lit), and one button that opens the menu and walks along it.
-    private func findItCard(_ path: String) -> some View {
+    @MainActor private func findItCard(_ path: String) -> some View {
         let steps = MenuHighlight.steps(of: path)
         return VStack(alignment: .leading, spacing: 10) {
             Label("WHERE TO FIND IT", systemImage: "mappin.and.ellipse")
@@ -124,7 +124,7 @@ struct WhatsNewView: View {
         .background(RoundedRectangle(cornerRadius: 8).fill(Color.accentColor.opacity(0.1)))
     }
 
-    private func stepNumber(_ number: Int, last: Bool) -> some View {
+    @MainActor private func stepNumber(_ number: Int, last: Bool) -> some View {
         Text("\(number)").font(.caption.weight(.bold)).foregroundStyle(.white)
             .frame(width: 18, height: 18)
             .background(Circle().fill(Color(nsColor: last ? MenuHighlight.hereColor : MenuHighlight.wayColor)))

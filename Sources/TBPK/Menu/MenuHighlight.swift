@@ -49,7 +49,7 @@ enum MenuHighlight {
     }
 
     // "Settings > Screen > Look present at the screen" -> the three names.
-    static func steps(of findIt: String) -> [String] {
+    nonisolated static func steps(of findIt: String) -> [String] {
         findIt.components(separatedBy: " > ").map { $0.trimmingCharacters(in: .whitespaces) }
     }
 

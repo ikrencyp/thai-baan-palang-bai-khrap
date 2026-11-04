@@ -2,7 +2,7 @@
 
 Each release gets a `## x.y.z` heading and a few short `- ` lines. The update dialog shows the first four.
 
-## 1.3.0
+## 1.3.1
 - Energy use moved into Power rules, and its choices now stay open: pick one, flip Set charger and battery separately, and the tick, the two power sources and the Right now line change on the spot instead of the menu closing
 - The three screen switches (Keep the screen on while awake, Look present at the screen, Turn the screen off when locked or closed) moved into Settings > Screen
 - Show animation is now Leaf motion, because it also sets the heartbeat and the power reading behind it, not only the power-up animation

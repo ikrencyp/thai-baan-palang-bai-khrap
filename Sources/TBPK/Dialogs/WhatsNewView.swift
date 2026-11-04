@@ -87,7 +87,7 @@ struct WhatsNewView: View {
                     }
                 }
             }
-            if let findIt = release.findIt { findItRow(findIt) }
+            ForEach(release.findIt, id: \.self) { findItCard($0) }
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -95,21 +95,38 @@ struct WhatsNewView: View {
         .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(isCurrent ? Color.accentColor.opacity(0.3) : Color.primary.opacity(0.08), lineWidth: 1))
     }
 
-    // The short tour of a release: where its new thing sits in the menu, and a button that opens the menu with the way marked.
-    private func findItRow(_ path: String) -> some View {
-        HStack(spacing: 10) {
-            Image(systemName: "mappin.and.ellipse").foregroundStyle(Color.accentColor).frame(width: 20)
-            VStack(alignment: .leading, spacing: 2) {
-                Text("WHERE TO FIND IT").font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
-                Text(path.components(separatedBy: " > ").joined(separator: "  \u{203A}  "))
-                    .font(.callout.weight(.medium)).fixedSize(horizontal: false, vertical: true)
+    // The short tour of a release: the way to the new thing as numbered steps (the same numbers the menu shows when
+    // the way is lit), and one button that opens the menu and walks along it.
+    private func findItCard(_ path: String) -> some View {
+        let steps = MenuHighlight.steps(of: path)
+        return VStack(alignment: .leading, spacing: 10) {
+            Label("WHERE TO FIND IT", systemImage: "mappin.and.ellipse")
+                .font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 6) {
+                ForEach(Array(steps.enumerated()), id: \.offset) { index, step in
+                    HStack(spacing: 10) {
+                        stepNumber(index + 1, last: index == steps.count - 1)
+                        Text(step).font(.callout.weight(index == steps.count - 1 ? .semibold : .regular))
+                            .fixedSize(horizontal: false, vertical: true)
+                        Spacer(minLength: 0)
+                    }
+                }
             }
-            Spacer(minLength: 8)
-            Button("Show me where") { showMenu(path) }
-                .controlSize(.small)
-                .help("Opens the menu and walks you along the way, one step at a time")
+            Button { showMenu(path) } label: {
+                Label("Show me where", systemImage: "cursorarrow.rays").frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.regular)
+            .help("Opens the menu and walks you along the way, one step at a time")
         }
-        .padding(10)
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: 8).fill(Color.accentColor.opacity(0.1)))
+    }
+
+    private func stepNumber(_ number: Int, last: Bool) -> some View {
+        Text("\(number)").font(.caption.weight(.bold)).foregroundStyle(.white)
+            .frame(width: 18, height: 18)
+            .background(Circle().fill(Color(nsColor: last ? MenuHighlight.hereColor : MenuHighlight.wayColor)))
     }
 }

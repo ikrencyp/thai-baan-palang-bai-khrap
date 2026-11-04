@@ -85,7 +85,7 @@ struct EndDateView: View {
         HStack(spacing: 10) {
             Text("And").foregroundStyle(model.tipsMinutes ? Color(nsColor: MenuHighlight.hereColor) : Color.secondary)
             if model.tipsMinutes {
-                Text(MenuHighlight.hereLabel.uppercased()).font(.caption2.weight(.bold)).foregroundStyle(.white)
+                Text("HERE").font(.caption2.weight(.bold)).foregroundStyle(.white)
                     .padding(.horizontal, 6).padding(.vertical, 2)
                     .background(Capsule().fill(Color(nsColor: MenuHighlight.hereColor)))
             }

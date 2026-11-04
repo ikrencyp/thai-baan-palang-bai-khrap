@@ -31,6 +31,19 @@ enum MenuParts {
         return item
     }
 
+    // A row that does its work and leaves the menu open. The item keeps its action, so the keyboard still works.
+    static func stayOpen(_ item: NSMenuItem, group: MenuRefresher, title: @escaping () -> String,
+                         detail: @escaping () -> String? = { nil }, isOn: @escaping () -> Bool,
+                         pick: @escaping () -> Void) -> NSMenuItem {
+        let row = StayOpenRow(title: title, detail: detail, isOn: isOn, pick: { pick(); group.run() })
+        item.view = row
+        group.add { [weak row, weak item] in
+            item?.state = isOn() ? .on : .off
+            row?.needsDisplay = true
+        }
+        return item
+    }
+
     static func sectionHeader(_ title: String) -> NSMenuItem {
         let item = NSMenuItem(title: title, action: nil, keyEquivalent: "")
         item.isEnabled = false

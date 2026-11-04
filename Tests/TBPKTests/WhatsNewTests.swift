@@ -11,7 +11,12 @@ final class WhatsNewTests: XCTestCase {
 
     func testAFindItLineIsKeptApartFromTheChanges() {
         let text = "## 1.1.0\n- one\n- Find it: Power rules > Screen\n- two\n"
-        XCTAssertEqual(ReleaseNotes.all(in: text), [Release(version: "1.1.0", lines: ["one", "two"], findIt: "Power rules > Screen")])
+        XCTAssertEqual(ReleaseNotes.all(in: text), [Release(version: "1.1.0", lines: ["one", "two"], findIt: ["Power rules > Screen"])])
+    }
+
+    func testEveryFindItLineOfAReleaseIsKept() {
+        let text = "## 2.8.0\n- one\n- Find it: Power rules > Energy use\n- Find it: Settings > Screen\n"
+        XCTAssertEqual(ReleaseNotes.all(in: text).first?.findIt, ["Power rules > Energy use", "Settings > Screen"])
     }
 
     func testEveryFindItPathOfTheChangelogStartsAtAMenuEntry() throws {
@@ -19,7 +24,7 @@ final class WhatsNewTests: XCTestCase {
         let changelog = try String(contentsOf: root.appendingPathComponent("CHANGELOG.md"), encoding: .utf8)
         let menu = StatusMenuBuilder.build(power: PowerManager.shared, watch: UnattendedWatch(power: PowerManager.shared), target: StubMenuTarget())
         let titles = menu.items.map(\.title)
-        for path in ReleaseNotes.all(in: changelog).compactMap(\.findIt) {
+        for path in ReleaseNotes.all(in: changelog).flatMap(\.findIt) {
             XCTAssertTrue(titles.contains(path.components(separatedBy: " > ")[0]), path)
         }
     }

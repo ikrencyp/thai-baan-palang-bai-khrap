@@ -6,14 +6,26 @@ enum SettingsMenu {
         let submenu = NSMenu()
         submenu.addItem(toggle("Show countdown", on: StatusPreferences.showCountdown,
                                #selector(StatusMenuTarget.countdownClicked(_:)), target))
-        submenu.addItem(toggle("Show animation", on: StatusPreferences.showAnimation,
+        submenu.addItem(toggle("Leaf motion", on: StatusPreferences.showAnimation,
                                #selector(StatusMenuTarget.animationClicked(_:)), target))
         submenu.addItem(LeafColorMenu.item(target: target))
-        submenu.addItem(EnergyMenu.item(target: target))
+        submenu.addItem(screen(target: target))
         submenu.addItem(toggle("Start at Login", on: LoginItem.isEnabled,
                                #selector(StatusMenuTarget.loginClicked), target))
         if UpdateStore.isOfferedHere() { submenu.addItem(updates(target: target)) }
         return MenuParts.parent("Settings", symbol: "gearshape", subtitle: nil, submenu: submenu)
+    }
+
+    // What the Mac does with its display while it is kept awake.
+    private static func screen(target: StatusMenuTarget) -> NSMenuItem {
+        let submenu = NSMenu()
+        submenu.addItem(toggle("Keep the screen on while awake", on: StatusPreferences.keepScreenOn,
+                               #selector(StatusMenuTarget.keepScreenClicked), target))
+        submenu.addItem(toggle("Look present at the screen", on: StatusPreferences.lookPresent,
+                               #selector(StatusMenuTarget.lookPresentClicked), target))
+        submenu.addItem(toggle("Turn the screen off when locked or closed", on: StatusPreferences.darkenWhenClosed,
+                               #selector(StatusMenuTarget.darkenClicked), target))
+        return MenuParts.parent("Screen", symbol: "display", subtitle: nil, submenu: submenu)
     }
 
     // The same three switches as macOS Software Update: each one only counts while the one above it is on.

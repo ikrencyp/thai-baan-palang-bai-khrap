@@ -76,6 +76,7 @@ final class StatusItemController: NSObject, StatusMenuTarget {
     }
 
     private func popMenu() {
+        power.syncWithSystem()
         let menu = StatusMenuBuilder.build(power: power, watch: watch, target: self)
         MenuHighlight.apply(to: menu)
         menu.popUp(positioning: nil, at: NSPoint(x: 0, y: statusItem.button?.bounds.maxY ?? 0), in: statusItem.button)

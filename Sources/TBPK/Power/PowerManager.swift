@@ -20,6 +20,8 @@ final class PowerManager: ObservableObject {
     private var syncTimer: Timer?
     private var syncInterval: TimeInterval = EnergyPlan.standard.syncTick
     private var isSyncing = false
+    // Counts the changes made here. A reading of pmset that began before one finished is out of date and is dropped.
+    private var changeGeneration = 0
 
     private init() {}
 
@@ -163,6 +165,7 @@ final class PowerManager: ObservableObject {
                 hasFailure = true
                 statusMessage = error.localizedDescription
             }
+            changeGeneration += 1
             pendingValue = nil
             isWorking = false
         }
@@ -238,13 +241,16 @@ final class PowerManager: ObservableObject {
     }
 
     // pmset is a separate process: it is asked off the main thread so a slow answer never freezes the menu.
-    private func syncWithSystem() {
+    // An answer is used only if nothing was switched here while it was being read: a switch made in that time makes
+    // the answer old, and taking it would flip the icon back to the state the Mac has just left.
+    func syncWithSystem() {
         guard !isWorking, !isSyncing else { return }
         isSyncing = true
+        let generation = changeGeneration
         Task {
             let current = await Task.detached(priority: .utility) { PrivilegedShell.isSleepDisabled() }.value
             isSyncing = false
-            guard !isWorking, current != isSleepDisabled else { return }
+            guard !isWorking, generation == changeGeneration, current != isSleepDisabled else { return }
             setSleepDisabledState(current)
             guard !current else { return }
             SleepOwnership.isOwned = false

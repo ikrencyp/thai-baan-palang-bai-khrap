@@ -5,7 +5,7 @@ enum SoundMenu {
     static let percentTag = 4201
 
     static func item(target: StatusMenuTarget) -> NSMenuItem {
-        let group = SoundMenuRefresher()
+        let group = MenuRefresher()
         let submenu = NSMenu()
         addChoices(to: submenu, target: target, group: group)
         submenu.addItem(.separator())
@@ -19,7 +19,7 @@ enum SoundMenu {
 
     // The sound rows when they sit inside another menu (Alerts): the choices fold into one "Sound" row, so the count and
     // the volume stay one click away. `group` is shared with the host menu so its own lines refresh with every pick.
-    static func rows(target: StatusMenuTarget, group: SoundMenuRefresher) -> [NSMenuItem] {
+    static func rows(target: StatusMenuTarget, group: MenuRefresher) -> [NSMenuItem] {
         let choices = NSMenu()
         addChoices(to: choices, target: target, group: group)
         let sound = MenuParts.parent("Sound", symbol: "music.note", subtitle: AlertSound.stored.displayName, submenu: choices)
@@ -32,7 +32,7 @@ enum SoundMenu {
     }
 
     // Two groups, so it is clear where a sound comes from: added by the person, owned by macOS.
-    private static func addChoices(to menu: NSMenu, target: StatusMenuTarget, group: SoundMenuRefresher) {
+    private static func addChoices(to menu: NSMenu, target: StatusMenuTarget, group: MenuRefresher) {
         menu.addItem(MenuParts.info("Pick a sound, then press play below"))
         menu.addItem(.separator())
         menu.addItem(MenuParts.sectionHeader("My sounds"))
@@ -46,26 +46,14 @@ enum SoundMenu {
     }
 
     // A row that picks the sound and leaves the menu open. The item keeps its action, so the keyboard still works.
-    private static func choice(_ sound: AlertSound, target: StatusMenuTarget, group: SoundMenuRefresher) -> NSMenuItem {
+    private static func choice(_ sound: AlertSound, target: StatusMenuTarget, group: MenuRefresher) -> NSMenuItem {
         let item = MenuParts.radio(sound.displayName, sound.name, sound == AlertSound.stored,
                                    #selector(StatusMenuTarget.alertSoundClicked(_:)), target)
-        return stayOpen(item, group: group, title: { sound.displayName }, detail: { AlertBeepCount.stored(for: sound).label },
+        return MenuParts.stayOpen(item, group: group, title: { sound.displayName }, detail: { AlertBeepCount.stored(for: sound).label },
                         isOn: { AlertSound.stored == sound }, pick: { [weak item] in item.map(target.alertSoundClicked) })
     }
 
-    private static func stayOpen(_ item: NSMenuItem, group: SoundMenuRefresher, title: @escaping () -> String,
-                                 detail: @escaping () -> String? = { nil }, isOn: @escaping () -> Bool,
-                                 pick: @escaping () -> Void) -> NSMenuItem {
-        let row = StayOpenRow(title: title, detail: detail, isOn: isOn, pick: { pick(); group.run() })
-        item.view = row
-        group.add { [weak row, weak item] in
-            item?.state = isOn() ? .on : .off
-            row?.needsDisplay = true
-        }
-        return item
-    }
-
-    private static func macSounds(target: StatusMenuTarget, group: SoundMenuRefresher) -> NSMenuItem {
+    private static func macSounds(target: StatusMenuTarget, group: MenuRefresher) -> NSMenuItem {
         let submenu = NSMenu()
         let sounds = AlertSound.available.filter { !$0.isCustom }
         sounds.forEach { submenu.addItem(choice($0, target: target, group: group)) }
@@ -86,7 +74,7 @@ enum SoundMenu {
         return MenuParts.parent("Remove one of my sounds", symbol: "trash", subtitle: nil, submenu: submenu)
     }
 
-    private static func beepCount(target: StatusMenuTarget, group: SoundMenuRefresher) -> NSMenuItem {
+    private static func beepCount(target: StatusMenuTarget, group: MenuRefresher) -> NSMenuItem {
         let submenu = NSMenu()
         let heading = MenuParts.info(countHeading())
         submenu.addItem(heading)
@@ -94,7 +82,7 @@ enum SoundMenu {
         for count in AlertBeepCount.allCases {
             let item = MenuParts.radio(count.label, count.rawValue, count == AlertBeepCount.stored(for: AlertSound.stored),
                                        #selector(StatusMenuTarget.beepCountClicked(_:)), target)
-            submenu.addItem(stayOpen(item, group: group, title: { count.label },
+            submenu.addItem(MenuParts.stayOpen(item, group: group, title: { count.label },
                                      isOn: { count == AlertBeepCount.stored(for: AlertSound.stored) },
                                      pick: { [weak item] in item.map(target.beepCountClicked) }))
         }
@@ -102,7 +90,7 @@ enum SoundMenu {
         let all = MenuParts.action("Use the same for every sound", symbol: nil,
                                    #selector(StatusMenuTarget.sharedBeepCountClicked), target)
         all.state = AlertBeepCount.isShared() ? .on : .off
-        submenu.addItem(stayOpen(all, group: group, title: { "Use the same for every sound" }, isOn: { AlertBeepCount.isShared() },
+        submenu.addItem(MenuParts.stayOpen(all, group: group, title: { "Use the same for every sound" }, isOn: { AlertBeepCount.isShared() },
                                  pick: { target.sharedBeepCountClicked() }))
         let parent = MenuParts.parent("Play how many times", symbol: "repeat", subtitle: AlertBeepCount.stored(for: AlertSound.stored).label,
                                       submenu: submenu)

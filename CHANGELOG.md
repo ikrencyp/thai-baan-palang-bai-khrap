@@ -2,6 +2,16 @@
 
 Each release gets a `## x.y.z` heading and a few short `- ` lines. The update dialog shows the first four.
 
+## 1.3.0
+- Energy use moved into Power rules, and its choices now stay open: pick one, flip Set charger and battery separately, and the tick, the two power sources and the Right now line change on the spot instead of the menu closing
+- The three screen switches (Keep the screen on while awake, Look present at the screen, Turn the screen off when locked or closed) moved into Settings > Screen
+- Show animation is now Leaf motion, because it also sets the heartbeat and the power reading behind it, not only the power-up animation
+- Switching Keep awake on and off in quick turns no longer leaves the icon showing the wrong state, and Low Power Mode on battery is set and given back one change at a time, so a fast on and off cannot leave it stuck; the state is also read again each time the menu opens
+- What's new has a new look from this version on: the way to a new item is numbered steps with one Show me where button, and the menu marks the same numbers beside each step; earlier versions no longer have the button
+- Find it: Power rules > Energy use
+- Find it: Settings > Screen
+- Find it: Settings > Leaf motion
+
 ## 1.2.5
 - Energy use can be set separately for the charger and for battery: switch on Set charger and battery separately and each power source gets its own choice, used by itself when you plug or unplug; both are remembered when you switch back to one choice for both
 - The leaf heartbeat now beats on battery and in Low Power Mode too, calm like on the charger; only Reduce Motion (and the Power saver choice) keeps the leaf still

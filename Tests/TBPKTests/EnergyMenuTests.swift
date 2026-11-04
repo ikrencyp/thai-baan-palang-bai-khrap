@@ -57,8 +57,43 @@ final class EnergyMenuTests: XCTestCase {
         XCTAssertTrue(lines.contains("Right now: still leaf"), lines.description)
     }
 
-    func testTheChoiceLivesInSettings() throws {
+    func testTheChoiceLivesInPowerRules() throws {
+        let rules = try XCTUnwrap(PowerRulesMenu.item(target: StubMenuTarget()).submenu)
+        XCTAssertTrue(rules.items.contains { $0.title == "Energy use" })
         let settings = try XCTUnwrap(SettingsMenu.item(target: StubMenuTarget()).submenu)
-        XCTAssertTrue(settings.items.contains { $0.title == "Energy use" })
+        XCTAssertFalse(settings.items.contains { $0.title == "Energy use" })
+    }
+
+    func testTheRowsStayOpenAndTheListReshapesInPlaceWhenSeparateFlips() async throws {
+        let defaults = UserDefaults.standard
+        let keys = [EnergyProfile.Slot.charger.storageKey, EnergyProfile.Slot.battery.storageKey, EnergyProfile.separateKey]
+        let saved = keys.map { defaults.object(forKey: $0) }
+        defer { zip(keys, saved).forEach { defaults.set($1, forKey: $0) } }
+        keys.forEach(defaults.removeObject(forKey:))
+        final class Target: StubMenuTarget {
+            override func energyProfileClicked(_ item: NSMenuItem) {
+                (item.representedObject as? EnergyProfile.Pick).map { $0.profile.store($0.slot) }
+            }
+            override func energySeparateClicked(_ item: NSMenuItem) { EnergyProfile.setSeparate(item.state != .on) }
+        }
+        let parent = EnergyMenu.item(target: Target())
+        let menu = try XCTUnwrap(parent.submenu)
+        func row(_ title: String) throws -> (NSMenuItem, StayOpenRow) {
+            let item = try XCTUnwrap(menu.items.first { $0.title == title })
+            return (item, try XCTUnwrap(item.view as? StayOpenRow))
+        }
+        let full = try row(EnergyProfile.full.title)
+        full.1.performPick()
+        XCTAssertEqual(EnergyProfile.stored(), .full)
+        XCTAssertEqual(full.0.state, .on, "the tick moves at once, the menu is not rebuilt")
+        XCTAssertEqual(try row(EnergyProfile.automatic.title).0.state, .off)
+        XCTAssertTrue(menu.items.contains { $0.title.hasPrefix("Right now:") })
+
+        try row("Set charger and battery separately").1.performPick()
+        await MainActor.run {}
+        try await Task.sleep(nanoseconds: 100_000_000)
+        XCTAssertEqual(menu.items.filter { $0.submenu != nil }.map(\.title), ["On the charger", "On battery"])
+        XCTAssertEqual(try row("Set charger and battery separately").0.state, .on)
+        XCTAssertTrue(parent.title == "Energy use" && menu.items.contains { $0.title.hasPrefix("Right now:") })
     }
 }

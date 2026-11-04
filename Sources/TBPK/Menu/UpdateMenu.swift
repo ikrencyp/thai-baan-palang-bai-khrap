@@ -27,21 +27,19 @@ enum UpdateMenu {
 
     // A tag at the end of the line, so the item that installs the update is the one that stands out.
     // macOS 14 draws it as a native badge; macOS 13 gets the same word in blue after the title.
-    // `emphasized` also sets the title in bold, for the items "Show me where" points at.
-    static func tag(_ item: NSMenuItem, label: String = updateLabel, emphasized: Bool = false, color: NSColor = .systemBlue) {
+    static func tag(_ item: NSMenuItem) {
         if #available(macOS 14.0, *) {
-            item.badge = NSMenuItemBadge(string: label)
-            if emphasized { item.attributedTitle = emphasizedTitle(item.title, color: color) }
+            item.badge = NSMenuItemBadge(string: updateLabel)
         } else {
-            let text = NSMutableAttributedString(attributedString: emphasized ? emphasizedTitle(item.title, color: color) : NSAttributedString(string: item.title))
-            text.append(NSAttributedString(string: "  \(label)", attributes: [
-                .foregroundColor: color, .font: NSFont.menuFont(ofSize: 0),
+            let text = NSMutableAttributedString(string: item.title)
+            text.append(NSAttributedString(string: "  \(updateLabel)", attributes: [
+                .foregroundColor: NSColor.systemBlue, .font: NSFont.menuFont(ofSize: 0),
             ]))
             item.attributedTitle = text
         }
     }
 
-    private static func emphasizedTitle(_ title: String, color: NSColor) -> NSAttributedString {
+    static func emphasizedTitle(_ title: String, color: NSColor) -> NSAttributedString {
         let bold = NSFontManager.shared.convert(NSFont.menuFont(ofSize: 0), toHaveTrait: .boldFontMask)
         return NSAttributedString(string: title, attributes: [.font: bold, .foregroundColor: color])
     }
@@ -51,9 +49,9 @@ enum UpdateMenu {
         return nil
     }
 
-    static func isTagged(_ item: NSMenuItem, as label: String = updateLabel) -> Bool {
-        if #available(macOS 14.0, *) { return badgeText(of: item) == label }
-        return item.attributedTitle?.string.hasSuffix(label) == true
+    static func isTagged(_ item: NSMenuItem) -> Bool {
+        if #available(macOS 14.0, *) { return badgeText(of: item) == updateLabel }
+        return item.attributedTitle?.string.hasSuffix(updateLabel) == true
     }
 
     private static func withStatus(_ item: NSMenuItem) -> NSMenuItem {

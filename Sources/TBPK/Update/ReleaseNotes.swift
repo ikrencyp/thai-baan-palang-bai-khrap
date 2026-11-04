@@ -15,18 +15,18 @@ enum ReleaseNotes {
         var releases: [Release] = []
         var version: String?
         var lines: [String] = []
-        var findIt: String?
+        var findIt: [String] = []
         func close() {
             if let version, !lines.isEmpty { releases.append(Release(version: version, lines: lines, findIt: findIt)) }
             lines = []
-            findIt = nil
+            findIt = []
         }
         for line in changelog.split(separator: "\n", omittingEmptySubsequences: false).map(String.init) {
             if line.hasPrefix("## ") {
                 close()
                 version = line.dropFirst(3).split(separator: " ").first.map(String.init)
             } else if version != nil, line.hasPrefix(findItPrefix) {
-                findIt = String(line.dropFirst(findItPrefix.count))
+                findIt.append(String(line.dropFirst(findItPrefix.count)))
             } else if version != nil, line.hasPrefix("- ") {
                 lines.append(String(line.dropFirst(2)))
             }

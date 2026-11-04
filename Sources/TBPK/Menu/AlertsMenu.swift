@@ -25,7 +25,7 @@ enum AlertsMenu {
 
         submenu.addItem(.separator())
         submenu.addItem(MenuParts.sectionHeader("What it sounds like"))
-        let group = SoundMenuRefresher()
+        let group = MenuRefresher()
         SoundMenu.rows(target: target, group: group).forEach(submenu.addItem)
 
         let parent = MenuParts.parent("Alerts", symbol: "bell.badge", subtitle: subtitle(), submenu: submenu)

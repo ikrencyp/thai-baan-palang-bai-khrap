@@ -50,6 +50,10 @@ If your Mac is muted or very quiet, the app turns the speaker up so you can hear
 
 - **Go back to normal sleep when**: the battery drops below 20% or 10%, or the charger comes out. The default is Never. When it fires, the app plays the alert once and the menu tells you why.
 - **Low Power Mode while on battery** (off by default): while the Mac is kept awake, it also runs in Low Power Mode on battery. The old setting is put back afterwards. Switching it on asks for your password once and adds the same no-password file as "Allow, no password after this" (see [Permissions](permissions.md)), even if you chose to be asked every time.
+- **Energy use**: how hard the app works to look alive (see below). Its choices stay open, so you can pick one and watch the **Right now** line change.
+
+The three screen switches live in **Settings > Screen**:
+
 - **Keep the screen on while awake** (on by default): the screen does not go dark by itself. Turn it off and the Mac follows its normal screen timeout, but still stays awake.
 - **Look present at the screen** (off by default): see below.
 - **Turn the screen off when locked or closed** (off on a new install; an install that already ran keeps it on): the screen goes dark when you lock it or shut the lid.
@@ -58,7 +62,7 @@ If your Mac is muted or very quiet, the app turns the speaker up so you can hear
 
 Chat apps such as Teams or Slack show you as away after a few minutes without mouse or keyboard input. Keep awake does not count as input, so you can show as away while the Mac is working for you. This switch fixes that.
 
-1. Click the leaf, open **Power rules**, and choose **Look present at the screen** under **Screen**.
+1. Click the leaf, open **Settings > Screen**, and choose **Look present at the screen**.
 2. macOS asks once to let the app control your computer. Open **System Settings > Privacy & Security > Accessibility** and turn on Thai Baan Palang Bai Khrap. Without it the switch does nothing.
 3. Turn on Keep awake and walk away. Every minute the app sends one mouse-moved event that moves nothing, so the Mac never looks idle.
 4. To stop, choose the same item again. Nothing is sent and idle time counts as before.
@@ -75,7 +79,7 @@ It only runs while Keep awake is on and the screen is held. It stays quiet while
 
 ## Energy use
 
-**Settings > Energy use** decides how hard the app works to look alive. **Automatic** is the default: calm on the charger, still on battery.
+**Power rules > Energy use** decides how hard the app works to look alive. **Automatic** is the default: calm on the charger, still on battery.
 
 | Choice | What you see | How often it checks |
 |---|---|---|

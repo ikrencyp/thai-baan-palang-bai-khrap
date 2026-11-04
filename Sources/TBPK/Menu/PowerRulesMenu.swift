@@ -16,19 +16,7 @@ enum PowerRulesMenu {
         saver.state = BatterySaver.isEnabled ? .on : .off
         submenu.addItem(saver)
         submenu.addItem(.separator())
-        submenu.addItem(MenuParts.sectionHeader("Screen"))
-        let keep = MenuParts.action("Keep the screen on while awake", symbol: nil,
-                                    #selector(StatusMenuTarget.keepScreenClicked), target)
-        keep.state = StatusPreferences.keepScreenOn ? .on : .off
-        submenu.addItem(keep)
-        let present = MenuParts.action("Look present at the screen", symbol: nil,
-                                       #selector(StatusMenuTarget.lookPresentClicked), target)
-        present.state = StatusPreferences.lookPresent ? .on : .off
-        submenu.addItem(present)
-        let darken = MenuParts.action("Turn the screen off when locked or closed", symbol: nil,
-                                      #selector(StatusMenuTarget.darkenClicked), target)
-        darken.state = StatusPreferences.darkenWhenClosed ? .on : .off
-        submenu.addItem(darken)
+        submenu.addItem(EnergyMenu.item(target: target))
         return MenuParts.parent("Power rules", symbol: "battery.75", subtitle: subtitle(), submenu: submenu)
     }
 

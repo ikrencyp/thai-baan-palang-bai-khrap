@@ -104,46 +104,63 @@ final class MenuTests: XCTestCase {
         XCTAssertEqual(SoundMenu.percentText(1), "100%")
     }
 
-    func testPowerRulesOfferEveryLimitAndTheScreenSwitch() throws {
+    func testPowerRulesOfferEveryLimitAndTheEnergyChoice() throws {
         let titles = try submenu(PowerRulesMenu.item(target: target), titled: "Power rules").items.map(\.title)
-        XCTAssertTrue(titles.contains("Look present at the screen"))
         for limit in PowerLimit.allCases { XCTAssertTrue(titles.contains(limit.label), limit.label) }
-        XCTAssertTrue(titles.contains("Turn the screen off when locked or closed"))
-        XCTAssertTrue(titles.contains("Keep the screen on while awake"))
+        XCTAssertTrue(titles.contains("Energy use"))
+        XCTAssertFalse(titles.contains("Keep the screen on while awake"), "the screen switches moved to Settings")
     }
 
-    func testShowMeWhereTagsEachStepOfThePathAndNothingElse() throws {
+    func testTheScreenSwitchesLiveInSettings() throws {
+        let screen = try XCTUnwrap(try submenu(SettingsMenu.item(target: target), titled: "Settings").items.first { $0.title == "Screen" }?.submenu)
+        XCTAssertEqual(screen.items.map(\.title), ["Keep the screen on while awake", "Look present at the screen",
+                                                  "Turn the screen off when locked or closed"])
+    }
+
+    private let screenPath = "Settings > Screen > Look present at the screen"
+
+    private func lit(_ path: String) -> NSMenu {
         let menu = NSMenu()
         menu.addItem(PowerRulesMenu.item(target: target))
         menu.addItem(SettingsMenu.item(target: target))
-        MenuHighlight.path = MenuHighlight.steps(of: "Power rules > Screen > Look present at the screen")
-        defer { MenuHighlight.path = [] }
+        MenuHighlight.path = MenuHighlight.steps(of: path)
         MenuHighlight.apply(to: menu)
+        return menu
+    }
+
+    func testShowMeWhereNumbersEachStepOfThePathAndNothingElse() throws {
+        defer { MenuHighlight.path = [] }
+        let menu = lit(screenPath)
+        let settings = try XCTUnwrap(menu.items.first { $0.title == "Settings" })
+        let screen = try XCTUnwrap(settings.submenu?.items.first { $0.title == "Screen" })
+        let leaf = try XCTUnwrap(screen.submenu?.items.first { $0.title == "Look present at the screen" })
+        XCTAssertEqual(settings.image?.accessibilityDescription, "Step 1")
+        XCTAssertEqual(screen.image?.accessibilityDescription, "Step 2")
+        XCTAssertEqual(leaf.image?.accessibilityDescription, "Step 3")
+        let colour = { (item: NSMenuItem) in item.attributedTitle?.attribute(.foregroundColor, at: 0, effectiveRange: nil) as? NSColor }
+        XCTAssertEqual(colour(settings), MenuHighlight.wayColor)
+        XCTAssertEqual(colour(leaf), MenuHighlight.hereColor, "the item to find is green")
         let rules = try XCTUnwrap(menu.items.first { $0.title == "Power rules" })
-        let leaf = try XCTUnwrap(rules.submenu?.items.first { $0.title == "Look present at the screen" })
-        let header = try XCTUnwrap(rules.submenu?.items.first { !$0.isEnabled && $0.attributedTitle?.string == "SCREEN" })
-        XCTAssertEqual(UpdateMenu.badgeText(of: rules), MenuHighlight.onTheWayLabel, "a step on the way says Open")
-        XCTAssertEqual(UpdateMenu.badgeText(of: leaf), MenuHighlight.hereLabel, "the item to find says Here, never New")
-        XCTAssertTrue(UpdateMenu.isTagged(leaf, as: MenuHighlight.hereLabel))
-        XCTAssertFalse(UpdateMenu.isTagged(rules, as: MenuHighlight.hereLabel))
-        XCTAssertFalse(UpdateMenu.isTagged(header, as: MenuHighlight.hereLabel))
-        XCTAssertFalse(UpdateMenu.isTagged(try XCTUnwrap(menu.items.first { $0.title == "Settings" }), as: MenuHighlight.hereLabel))
+        XCTAssertNil(rules.attributedTitle, "a menu off the way is left as it is")
+        XCTAssertFalse(UpdateMenu.isTagged(settings), "the way uses numbers, not the update tag")
+    }
+
+    func testShowMeWhereCanPointAtEnergyUseInPowerRules() throws {
+        defer { MenuHighlight.path = [] }
+        let menu = lit("Power rules > Energy use")
+        let rules = try XCTUnwrap(menu.items.first { $0.title == "Power rules" })
+        let energy = try XCTUnwrap(rules.submenu?.items.first { $0.title == "Energy use" })
+        XCTAssertEqual(rules.image?.accessibilityDescription, "Step 1")
+        XCTAssertEqual(energy.image?.accessibilityDescription, "Step 2")
     }
 
     func testShowMeWhereAddsACardWithTheWholeRouteOnTop() throws {
-        let menu = NSMenu()
-        menu.addItem(PowerRulesMenu.item(target: target))
-        let steps = MenuHighlight.steps(of: "Power rules > Screen > Look present at the screen")
-        MenuHighlight.path = steps
         defer { MenuHighlight.path = [] }
-        MenuHighlight.apply(to: menu)
+        let menu = lit(screenPath)
         XCTAssertNotNil(menu.items[0].view, "the guide card is the first row")
         XCTAssertTrue(menu.items[1].isSeparatorItem)
-        XCTAssertEqual(MenuGuideRow.title(path: steps).string, "Look here\nPower rules  \u{203A}  Screen  \u{203A}  Look present at the screen")
-        let rules = try XCTUnwrap(menu.items.first { $0.title == "Power rules" })
-        let header = try XCTUnwrap(rules.submenu?.items.first { $0.attributedTitle?.string == "SCREEN" })
-        let colour = header.attributedTitle?.attribute(.foregroundColor, at: 0, effectiveRange: nil) as? NSColor
-        XCTAssertEqual(colour, MenuHighlight.wayColor, "the section on the way takes the way colour")
+        XCTAssertEqual(MenuGuideRow.title(path: MenuHighlight.steps(of: screenPath)).string,
+                       "Look here\nSettings  \u{203A}  Screen  \u{203A}  Look present at the screen")
         MenuHighlight.path = []
         let plain = NSMenu()
         plain.addItem(PowerRulesMenu.item(target: target))
@@ -152,26 +169,22 @@ final class MenuTests: XCTestCase {
     }
 
     func testTheGuideCardWalksTheRouteOneStepAtATimeAndThenLightsAllOfIt() {
-        let steps = MenuHighlight.steps(of: "Power rules > Screen > Look present at the screen")
+        let steps = MenuHighlight.steps(of: screenPath)
         XCTAssertEqual((0...6).map { MenuGuideRow.activeStep(tick: $0, count: steps.count) }, [0, 1, 2, nil, 0, 1, 2])
         XCTAssertNil(MenuGuideRow.activeStep(tick: 5, count: 0), "an empty route has no step to light")
         XCTAssertEqual(MenuGuideRow.title(path: steps, active: 1).string,
-                       "Step 2 of 3\nPower rules  \u{203A}  Screen  \u{203A}  Look present at the screen")
+                       "Step 2 of 3\nSettings  \u{203A}  Screen  \u{203A}  Look present at the screen")
         let colours = (0..<3).map { step in
             MenuGuideRow.title(path: steps, active: 0).attribute(.foregroundColor, at: stepStart(step, in: steps), effectiveRange: nil) as? NSColor
         }
         XCTAssertEqual(colours, [MenuHighlight.wayColor, .tertiaryLabelColor, .tertiaryLabelColor], "the steps ahead wait in grey")
     }
 
-    func testNoTagInTheMenuUsesTheWordNew() throws {
-        let menu = NSMenu()
-        menu.addItem(PowerRulesMenu.item(target: target))
-        MenuHighlight.path = MenuHighlight.steps(of: "Power rules > Screen > Look present at the screen")
+    func testNoMarkInTheMenuUsesTheWordNew() throws {
         defer { MenuHighlight.path = [] }
-        MenuHighlight.apply(to: menu)
-        let badges = (menu.items + (menu.items.compactMap(\.submenu?.items).flatMap { $0 })).compactMap { UpdateMenu.badgeText(of: $0) }
-        XCTAssertEqual(badges, [MenuHighlight.onTheWayLabel, MenuHighlight.hereLabel])
-        XCTAssertFalse(badges.contains("New"))
+        let menu = lit(screenPath)
+        let all = menu.items + menu.items.compactMap(\.submenu?.items).flatMap { $0 }
+        XCTAssertFalse(all.contains { UpdateMenu.badgeText(of: $0) == "New" || $0.title == "New" })
     }
 
     private func stepStart(_ step: Int, in steps: [String]) -> Int {
@@ -179,9 +192,9 @@ final class MenuTests: XCTestCase {
         return heading + steps.prefix(step).reduce(0) { $0 + $1.count + "  \u{203A}  ".count }
     }
 
-    func testSettingsHoldTheSwitchesTheEnergyChoiceAndNoQuitChoice() throws {
+    func testSettingsHoldTheSwitchesTheScreenChoicesAndNoQuitChoice() throws {
         let titles = try submenu(SettingsMenu.item(target: target), titled: "Settings").items.map(\.title)
-        XCTAssertEqual(titles, ["Show countdown", "Show animation", "Leaf colour", "Energy use", "Start at Login", "Updates"])
+        XCTAssertEqual(titles, ["Show countdown", "Leaf motion", "Leaf colour", "Screen", "Start at Login", "Updates"])
     }
 
     func testAWaitingUpdateIsTaggedNewAndNothingElseIs() throws {

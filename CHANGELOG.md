@@ -2,6 +2,11 @@
 
 Each release gets a `## x.y.z` heading and a few short `- ` lines. The update dialog shows the first four.
 
+## 1.3.5
+- General bug fixes so the app runs more steadily
+- When a countdown runs out with the lid closed or the screen locked, the Mac now goes back to how it was set up: it sleeps (or the screen goes dark) right away instead of staying warm and awake
+- A countdown that could not switch sleep back on is tried again instead of being forgotten
+
 ## 1.3.4
 - General bug fixes so the app runs more steadily
 - Look present at the screen now taps a key no app uses (F19) instead of moving the pointer, so it can no longer wake a tooltip, open a menu or touch a hot corner or the Dock wherever the pointer rests

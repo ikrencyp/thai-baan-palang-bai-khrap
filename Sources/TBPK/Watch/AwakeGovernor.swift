@@ -30,6 +30,7 @@ final class AwakeGovernor {
     }
 
     func evaluate() {
+        power.expireIfDue()
         batterySaver.sync(awake: power.isSleepDisabled && !power.isWorking)
         guard power.isSleepDisabled, !power.isWorking else {
             if !power.isSleepDisabled { release() }

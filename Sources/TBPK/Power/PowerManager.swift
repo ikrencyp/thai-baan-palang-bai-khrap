@@ -17,6 +17,7 @@ final class PowerManager: ObservableObject {
     nonisolated(unsafe) static var silentModeChooser: @MainActor () -> SilentModeChoice = { SilentModeDialog.ask() }
 
     private var expiryTimer: Timer?
+    private var countdownActivity: NSObjectProtocol?
     private var syncTimer: Timer?
     private var syncInterval: TimeInterval = EnergyPlan.standard.syncTick
     private var isSyncing = false
@@ -62,11 +63,12 @@ final class PowerManager: ObservableObject {
         }
     }
 
-    func disable() {
-        apply(sleepDisabled: false, prompt: PowerMessages.disablePrompt) {
+    func disable(onFailure: (() -> Void)? = nil) {
+        apply(sleepDisabled: false, prompt: PowerMessages.disablePrompt, onFailure: onFailure) {
             SleepOwnership.isOwned = false
             self.clearExpiry()
             self.statusMessage = PowerMessages.idle
+            ExpiryHandback.run()
         }
     }
 
@@ -132,7 +134,7 @@ final class PowerManager: ObservableObject {
         return EndDateText.restoreLine(expiresAt, now: Date())
     }
 
-    private func apply(sleepDisabled value: Bool, prompt: String, onSuccess: @escaping () -> Void) {
+    private func apply(sleepDisabled value: Bool, prompt: String, onFailure: (() -> Void)? = nil, onSuccess: @escaping () -> Void) {
         guard !isWorking else { return }
         let defaults = UserDefaults.standard
         var granting = value && !passwordlessAvailable && !defaults.bool(forKey: StorageKey.silentModeDeclined)
@@ -164,6 +166,7 @@ final class PowerManager: ObservableObject {
                 setSleepDisabledState(PrivilegedShell.isSleepDisabled())
                 hasFailure = true
                 statusMessage = error.localizedDescription
+                onFailure?()
             }
             changeGeneration += 1
             pendingValue = nil
@@ -207,6 +210,11 @@ final class PowerManager: ObservableObject {
         }
         RunLoop.main.add(timer, forMode: .common)
         expiryTimer = timer
+        // With the lid closed nothing else keeps this app busy, and App Nap would let the timer fire late or not at all.
+        if countdownActivity == nil {
+            countdownActivity = ProcessInfo.processInfo.beginActivity(
+                options: .userInitiatedAllowingIdleSystemSleep, reason: "Counting down to the end of keep awake")
+        }
     }
 
     private func clearExpiry() {
@@ -214,13 +222,39 @@ final class PowerManager: ObservableObject {
         expiryTimer = nil
         expiresAt = nil
         UserDefaults.standard.set(0, forKey: StorageKey.savedExpiry)
+        if let activity = countdownActivity {
+            ProcessInfo.processInfo.endActivity(activity)
+            countdownActivity = nil
+        }
     }
 
+    // The governor calls this on every lid, lock, power change and tick, so a timer that fired late is caught here.
+    func expireIfDue(now: Date = Date()) {
+        guard let expiresAt, expiresAt <= now, isSleepDisabled else { return }
+        handleExpiry()
+    }
+
+    // The end is kept until the restore really worked: a restore that was busy or failed is tried again in 30 seconds,
+    // so the Mac is never left awake with no timer running. Without the silent rule a password prompt is not repeated.
     private func handleExpiry() {
-        clearExpiry()
-        guard isSleepDisabled else { return }
+        guard isSleepDisabled else {
+            clearExpiry()
+            return
+        }
+        guard !isWorking else {
+            retryExpiry()
+            return
+        }
+        if !passwordlessAvailable { clearExpiry() }
         statusMessage = PowerMessages.timeIsUp
-        disable()
+        disable(onFailure: { [weak self] in
+            guard let self, self.passwordlessAvailable else { return }
+            self.retryExpiry()
+        })
+    }
+
+    private func retryExpiry() {
+        scheduleExpiry(at: Date().addingTimeInterval(30))
     }
 
     // How often to ask the system whether sleep was switched back on elsewhere (the energy plan decides).

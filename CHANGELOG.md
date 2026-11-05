@@ -2,6 +2,10 @@
 
 Each release gets a `## x.y.z` heading and a few short `- ` lines. The update dialog shows the first four.
 
+## 1.3.3
+- General bug fixes so the app runs more steadily
+- Look present at the screen no longer nudges the pointer while it rests in the menu bar, on a screen edge or in a corner, which could open menus, float a tooltip over the screen and block the Spotlight shortcut
+
 ## 1.3.2
 - General bug fixes so the app runs more steadily
 - Look present at the screen now sends its input only when the Mac is idle, unlocked and lit, so it no longer swallows shortcuts or Spotlight and no longer parks the cursor in a corner

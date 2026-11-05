@@ -105,11 +105,11 @@ final class UpdateCoordinator {
         UpdateStore.markAnnounced(version)
         let ready = AppVersion(version).flatMap { UpdateStore.downloadedRoot(for: $0) } != nil
         let alert = NSAlert()
-        alert.messageText = ready ? "Version \(version) is ready to install" : "Version \(version) is available"
+        alert.messageText = ready ? "Version \(version) is ready" : "Version \(version) is available"
         let notes = UpdateStore.pendingNotes().map { "What is new:\n\($0)\n\n" } ?? ""
-        let steps = ready ? "TBPK will quit, install it and open again." : "TBPK will download the update, quit, install it and open again."
-        alert.informativeText = "\(notes)You have \(AppInfo.version). \(steps) Keep awake turns off while it restarts."
-        alert.addButton(withTitle: ready ? "Restart and Install" : "Install and Restart")
+        let steps = ready ? "TBPK will close for a moment, update itself and open again." : "TBPK will download the update, close for a moment, update itself and open again."
+        alert.informativeText = "\(notes)You have \(AppInfo.version). \(steps) Your Mac does not restart. Keep awake turns off while TBPK updates."
+        alert.addButton(withTitle: ready ? "Update Now" : "Download and Update")
         alert.addButton(withTitle: "Not now")
         guard AlertPresenter.run(alert) == .alertFirstButtonReturn else { return }
         install(AppVersion(version))
@@ -138,10 +138,11 @@ final class UpdateCoordinator {
         Task {
             if UpdateStore.downloadedRoot(for: version) == nil {
                 UpdateProgressPanel.show("Downloading version \(version.text)…",
-                                         detail: "The app restarts by itself when the update is installed.", step: .download)
+                                         detail: "TBP updates itself when the download is done. Your Mac does not restart.", step: .download)
                 let ok = await download(version) { fraction in
                     Task { @MainActor in UpdateProgressPanel.setProgress(fraction) }
                 }
+                if ok { await Self.linger(Self.shortPause) }
                 guard ok else {
                     UpdateProgressPanel.hide()
                     return report("The update could not be downloaded",
@@ -158,8 +159,11 @@ final class UpdateCoordinator {
             }
             // Keep awake is turned off here, where a failure can be shown, not inside the quit: a quit that is
             // refused or waits for a password would leave the app open and the install waiting for nothing.
-            UpdateProgressPanel.show("Preparing to install…", detail: "Keep awake is turned off first.", step: .prepare)
-            switch await PowerManager.shared.restoreBeforeQuit() {
+            UpdateProgressPanel.show("Getting ready…", detail: "Keep awake is turned off first, so nothing is cut short.", step: .prepare)
+            let preparing = ContinuousClock.now
+            let restored = await PowerManager.shared.restoreBeforeQuit()
+            await Self.linger(Self.stepPause, since: preparing)
+            switch restored {
             case .restored: break
             case .cancelled:
                 return UpdateProgressPanel.hide()
@@ -169,15 +173,28 @@ final class UpdateCoordinator {
                               "Keep awake could not be turned off, so the app was not closed.\n\n\(reason)")
             }
             do {
-                UpdateProgressPanel.show("Installing version \(version.text)…", detail: "The app closes now and opens again in a moment.", step: .install)
+                UpdateProgressPanel.show("Installing version \(version.text)…", detail: "The new version is being put in place.", step: .install)
+                let installing = ContinuousClock.now
                 try UpdateInstaller.installAfterQuit(checkout, script: script)
                 UpdateStore.clearDownload()
+                await Self.linger(Self.stepPause, since: installing)
+                UpdateProgressPanel.show("Reopening TBP…", detail: "TBP closes now and opens again by itself. Your Mac does not restart.", step: .reopen)
+                await Self.linger(Self.stepPause)
                 NSApp.terminate(nil)
             } catch {
                 UpdateProgressPanel.hide()
                 report("The update could not be started", error.localizedDescription)
             }
         }
+    }
+
+    // Prepare and install finish in a blink, too fast to read. Each step stays up at least this long.
+    private static let stepPause: Duration = .milliseconds(1400)
+    private static let shortPause: Duration = .milliseconds(600)
+
+    private static func linger(_ pause: Duration, since start: ContinuousClock.Instant = .now) async {
+        let left = pause - (ContinuousClock.now - start)
+        if left > .zero { try? await Task.sleep(for: left) }
     }
 
     private func report(_ title: String, _ detail: String) {

@@ -1,17 +1,19 @@
 import AppKit
 
 // A small floating panel with a spinner, so a check or a download never looks like the app did nothing.
-// An install also shows its three steps, the finished ones ticked, so the person sees how far it is.
+// An update also lists its four steps, the finished ones ticked, with a bar under the list: it fills during the
+// download and keeps moving for the rest, so the person always sees where it is and that it is still working.
 @MainActor
 enum UpdateProgressPanel {
     enum Step: Int, CaseIterable {
-        case download, prepare, install
+        case download, prepare, install, reopen
 
         var title: String {
             switch self {
             case .download: return "Download"
             case .prepare: return "Prepare"
-            case .install: return "Install and restart"
+            case .install: return "Install"
+            case .reopen: return "Reopen TBP"
             }
         }
     }
@@ -24,6 +26,7 @@ enum UpdateProgressPanel {
     private static var detail: NSTextField?
     private static var steps: NSStackView?
     private static var progressRow: NSStackView?
+    private static var showsPercent = false
     private static var bar: NSProgressIndicator?
     private static var percent: NSTextField?
 
@@ -38,7 +41,7 @@ enum UpdateProgressPanel {
         title?.stringValue = message
         detail?.stringValue = text
         showSteps(step)
-        showProgress(step == .download)
+        showProgress(step)
         guard let panel else { return }
         fit(panel)
         guard !panel.isVisible else { return }
@@ -52,7 +55,7 @@ enum UpdateProgressPanel {
     }
 
     // The share of the download that is really in, as text; nil while the size is not known yet.
-    static var percentLabel: String? { progressRow?.isHidden == false ? percent?.stringValue : nil }
+    static var percentLabel: String? { showsPercent ? percent?.stringValue : nil }
 
     static func percentText(_ fraction: Double) -> String {
         "\(Int((min(1, max(0, fraction)) * 100).rounded()))%"
@@ -60,7 +63,7 @@ enum UpdateProgressPanel {
 
     // Only goes up: a late report from an earlier moment never moves the bar back.
     static func setProgress(_ fraction: Double) {
-        guard let bar, let percent, progressRow?.isHidden == false else { return }
+        guard let bar, let percent, showsPercent else { return }
         let value = max(min(1, fraction), bar.isIndeterminate ? 0 : bar.doubleValue / 100)
         bar.stopAnimation(nil)
         bar.isIndeterminate = false
@@ -68,10 +71,13 @@ enum UpdateProgressPanel {
         percent.stringValue = percentText(value)
     }
 
-    private static func showProgress(_ visible: Bool) {
+    // The bar shows during every step of an update. Only the download has a real share to report; the other steps
+    // have no honest number, so their bar just keeps moving.
+    private static func showProgress(_ step: Step?) {
         guard let row = progressRow, let bar, let percent else { return }
-        row.isHidden = !visible
-        guard visible else { return bar.stopAnimation(nil) }
+        row.isHidden = step == nil
+        showsPercent = step == .download
+        guard step != nil else { return bar.stopAnimation(nil) }
         bar.isIndeterminate = true
         bar.startAnimation(nil)
         percent.stringValue = percentText(0)
@@ -82,7 +88,7 @@ enum UpdateProgressPanel {
         let color: NSColor = step.rawValue < current.rawValue ? .systemGreen : step == current ? .labelColor : .tertiaryLabelColor
         let weight: NSFont.Weight = step == current ? .semibold : .regular
         return NSAttributedString(string: "\(mark) \(step.title)",
-                                  attributes: [.foregroundColor: color, .font: NSFont.systemFont(ofSize: 11, weight: weight)])
+                                  attributes: [.foregroundColor: color, .font: NSFont.systemFont(ofSize: 12, weight: weight)])
     }
 
     private static func showSteps(_ current: Step?) {
@@ -119,8 +125,9 @@ enum UpdateProgressPanel {
         body.textColor = .secondaryLabelColor
         body.preferredMaxLayoutWidth = textWidth
         let tracker = NSStackView(views: Step.allCases.map { _ in NSTextField(labelWithString: "") })
-        tracker.orientation = .horizontal
-        tracker.spacing = 12
+        tracker.orientation = .vertical
+        tracker.alignment = .leading
+        tracker.spacing = 3
         tracker.isHidden = true
         let meter = NSProgressIndicator()
         meter.style = .bar

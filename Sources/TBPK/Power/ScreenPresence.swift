@@ -1,8 +1,8 @@
 import ApplicationServices
 import Foundation
 
-// While on, a mouse-moved event with no movement is posted every minute. macOS counts that as input, so the Mac
-// does not look idle to other apps. Off: nothing is posted and the idle time runs as it did before.
+// While on, a mouse-moved event with no movement is posted once a minute, but only when the Mac
+// is idle, unlocked and lit. macOS counts that as input, so the Mac does not look idle to other apps. Off: nothing is posted and the idle time runs as it did before.
 @MainActor
 final class ScreenPresence {
     static let interval: TimeInterval = 60
@@ -16,7 +16,6 @@ final class ScreenPresence {
             return
         }
         guard timer == nil else { return }
-        Self.pulse()
         let next = Timer(timeInterval: Self.interval, repeats: true) { _ in Self.pulse() }
         next.tolerance = Self.interval / 6
         RunLoop.main.add(next, forMode: .common)
@@ -28,10 +27,24 @@ final class ScreenPresence {
         if !CGPreflightPostEventAccess() { CGRequestPostEventAccess() }
     }
 
+    // Only an idle, unlocked, lit Mac gets the pulse: a pulse while someone types, or on the lock screen, can
+    // swallow shortcuts and Spotlight, and a pulse with no known cursor position would park the cursor in a hot corner.
+    nonisolated static func shouldPulse(idle: TimeInterval, locked: Bool, displayAsleep: Bool) -> Bool {
+        !locked && !displayAsleep && idle >= interval * 0.75
+    }
+
     static func pulse() {
         guard CGPreflightPostEventAccess() else { return }
-        let location = CGEvent(source: nil)?.location ?? .zero
-        CGEvent(mouseEventSource: CGEventSource(stateID: .hidSystemState), mouseType: .mouseMoved,
-                mouseCursorPosition: location, mouseButton: .left)?.post(tap: .cghidEventTap)
+        let snapshot = UnattendedSnapshot.read(buzzing: true)
+        let idle = CGEventSource.secondsSinceLastEventType(.hidSystemState, eventType: CGEventType(rawValue: ~0)!)
+        guard shouldPulse(idle: idle, locked: snapshot.screenLocked,
+                          displayAsleep: CGDisplayIsAsleep(CGMainDisplayID()) != 0),
+              let location = CGEvent(source: nil)?.location,
+              let event = CGEvent(mouseEventSource: CGEventSource(stateID: .hidSystemState), mouseType: .mouseMoved,
+                                  mouseCursorPosition: location, mouseButton: .left) else { return }
+        event.flags = []
+        event.setIntegerValueField(.mouseEventDeltaX, value: 0)
+        event.setIntegerValueField(.mouseEventDeltaY, value: 0)
+        event.post(tap: .cghidEventTap)
     }
 }

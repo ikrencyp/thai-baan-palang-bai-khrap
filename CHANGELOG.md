@@ -2,6 +2,12 @@
 
 Each release gets a `## x.y.z` heading and a few short `- ` lines. The update dialog shows the first four.
 
+## 1.3.2
+- General bug fixes so the app runs more steadily
+- Look present at the screen now sends its input only when the Mac is idle, unlocked and lit, so it no longer swallows shortcuts or Spotlight and no longer parks the cursor in a corner
+- Updating now shows four steps you can follow, Download, Prepare, Install and Reopen TBP, each on screen long enough to read, with a bar that keeps moving
+- Update buttons and menu items say what they do (Update Now, Download and Update) and that only TBPK reopens, not your Mac
+
 ## 1.3.1
 - Energy use moved into Power rules, and its choices now stay open: pick one, flip Set charger and battery separately, and the tick, the two power sources and the Right now line change on the spot instead of the menu closing
 - The three screen switches (Keep the screen on while awake, Look present at the screen, Turn the screen off when locked or closed) moved into Settings > Screen

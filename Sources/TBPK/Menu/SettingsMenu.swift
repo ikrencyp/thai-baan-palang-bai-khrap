@@ -62,7 +62,7 @@ enum SettingsMenu {
     static func hint(checks: Bool, downloads: Bool, installs: Bool) -> String {
         guard checks else { return "Nothing runs on its own. Use Check for updates in the menu." }
         if installs { return "Looks every 6 hours, downloads, and installs while Keep awake is off." }
-        return downloads ? "Looks every 6 hours and downloads. You press Restart to update." : "Looks every 6 hours. You press Install update."
+        return downloads ? "Looks every 6 hours and downloads. You press Update." : "Looks every 6 hours. You press Update."
     }
 
     private static func toggle(_ title: String, on: Bool, _ action: Selector, _ target: StatusMenuTarget) -> NSMenuItem {

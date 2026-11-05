@@ -29,7 +29,7 @@ final class UpdateProgressPanelTests: XCTestCase {
 
     func testInstallStepsTickTheFinishedOnesAndMarkTheCurrentOne() {
         let texts = UpdateProgressPanel.Step.allCases.map { UpdateProgressPanel.stepText($0, current: .prepare).string }
-        XCTAssertEqual(texts, ["\u{2713} Download", "\u{25CF} Prepare", "\u{25CB} Install and restart"])
+        XCTAssertEqual(texts, ["\u{2713} Download", "\u{25CF} Prepare", "\u{25CB} Install", "\u{25CB} Reopen TBP"])
     }
 
     func testTheStepRowMakesTheWindowTallerAndDisappearsWithoutAStep() throws {

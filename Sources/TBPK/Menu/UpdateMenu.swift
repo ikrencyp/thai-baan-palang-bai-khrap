@@ -13,7 +13,7 @@ enum UpdateMenu {
         case .idle:
             if let version = coordinator.pending {
                 let ready = UpdateStore.downloadedRoot(for: version) != nil
-                let item = MenuParts.action(ready ? "Restart to update to \(version.text)…" : "Install update \(version.text)…",
+                let item = MenuParts.action(ready ? "Update to \(version.text) now…" : "Download and update to \(version.text)…",
                                             symbol: ready ? "arrow.clockwise.circle.fill" : "arrow.down.circle.fill", selector, target)
                 item.image = item.image?.withSymbolConfiguration(NSImage.SymbolConfiguration(paletteColors: [.systemBlue]))
                 tag(item)

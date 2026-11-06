@@ -2,6 +2,9 @@
 
 Each release gets a `## x.y.z` heading and a few short `- ` lines. The update dialog shows the first four.
 
+## 1.3.6
+- Look present at the screen now taps every 30 seconds on a strict timer that App Nap cannot delay, asks for Accessibility access again when it is lost, and logs what it did
+
 ## 1.3.5
 - General bug fixes so the app runs more steadily
 - When a countdown runs out with the lid closed or the screen locked, the Mac now goes back to how it was set up: it sleeps (or the screen goes dark) right away instead of staying warm and awake

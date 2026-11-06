@@ -103,8 +103,10 @@ if [ -n "${SIGN_IDENTITY:-}" ]; then
   echo "==> Developer ID sign"
   codesign --force --options runtime --timestamp --sign "$SIGN_IDENTITY" "$APP"
 else
+  # An ad-hoc signature's default requirement is the exact build (its cdhash), so macOS drops the Accessibility grant
+  # on every update. Naming the bundle id instead lets one grant survive from build to build.
   echo "==> Ad-hoc sign (set SIGN_IDENTITY for a Developer ID signature)"
-  codesign --force --sign - "$APP"
+  codesign --force --sign - -r="designated => identifier \"$BUNDLE_ID\"" "$APP"
 fi
 
 echo "==> Package .dmg"

@@ -2,6 +2,9 @@
 
 Each release gets a `## x.y.z` heading and a few short `- ` lines. The update dialog shows the first four.
 
+## 1.3.7
+- Look present at the screen keeps working after an update: the Accessibility permission stays granted instead of being lost each time TBPK is replaced
+
 ## 1.3.6
 - Look present at the screen now taps every 30 seconds on a strict timer that App Nap cannot delay, asks for Accessibility access again when it is lost, and logs what it did
 

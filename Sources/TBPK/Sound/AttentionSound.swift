@@ -10,6 +10,8 @@ enum AttentionSound {
 
     static var alertSoundLength: TimeInterval { AlertSound.stored.duration }
 
+    private static var playTask: Task<Void, Never>?
+    private static var activeSounds: [NSSound] = []
     private static var preview: NSSound?
     private static var previewRestore: Task<Void, Never>?
 
@@ -32,17 +34,37 @@ enum AttentionSound {
         let speaker = prepareSpeaker()
         let sound = AlertSound.stored
         let plays = AlertBeepCount.stored(for: sound).rawValue
-        Task {
+        playTask = Task {
             for beat in 1...plays {
-                sound.play(on: speaker)
+                guard !Task.isCancelled else { break }
+                if let playing = sound.play(on: speaker) {
+                    activeSounds.append(playing)
+                }
                 if beat < plays {
                     try? await Task.sleep(nanoseconds: AttentionSound.nanoseconds(spacing))
                 }
             }
-            try? await Task.sleep(nanoseconds: AttentionSound.nanoseconds(sound.duration))
+            if !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: AttentionSound.nanoseconds(sound.duration))
+            }
+            guard !Task.isCancelled else { return }
+            activeSounds.removeAll()
             AlertVolumeLift.restorePending()
+            playTask = nil
             isPlaying = false
         }
+    }
+
+    // Silences any in-progress multi-beat alert (for example when Keep awake turns off or its timer expires) without
+    // interrupting an unrelated preview playback.
+    static func stopAlert() {
+        let wasPlaying = isPlaying || playTask != nil || !activeSounds.isEmpty
+        playTask?.cancel()
+        playTask = nil
+        for playing in activeSounds { playing.stop() }
+        activeSounds.removeAll()
+        isPlaying = false
+        if wasPlaying { AlertVolumeLift.restorePending() }
     }
 
     // Lifts the built-in speaker and returns its UID. Without a built-in output nothing is lifted and the sound

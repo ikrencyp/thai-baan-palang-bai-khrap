@@ -25,9 +25,10 @@ confine() {
   done < <(swift_hits "$pattern" | cut -d: -f1 | sort -u)
 }
 
-# Starting another program.
+# Starting another program. Power/ScreenPresence.swift invokes /usr/bin/tccutil to reset its own Accessibility grant
+# and /bin/sh + /usr/bin/open to relaunch after Accessibility permission is granted while running.
 confine "starts a process" 'Process\(\)' \
-  Update/UpdateSource.swift Update/UpdateInstaller.swift Power/PrivilegedShell.swift Watch/DisplayControl.swift
+  Update/UpdateSource.swift Update/UpdateInstaller.swift Power/PrivilegedShell.swift Watch/DisplayControl.swift Power/ScreenPresence.swift
 confine "low-level process or shell call" 'posix_spawn|execv|popen\(|[^.[:alnum:]_]system\(|NSTask|NSUserUnixTask'
 
 # Talking to the network. The updater is the only part that may.

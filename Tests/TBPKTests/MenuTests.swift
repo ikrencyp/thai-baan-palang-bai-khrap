@@ -112,9 +112,82 @@ final class MenuTests: XCTestCase {
     }
 
     func testTheScreenSwitchesLiveInSettings() throws {
+        let savedAccess = ScreenPresence.hasAccessCheck
+        ScreenPresence.hasAccessCheck = { true }
+        defer { ScreenPresence.hasAccessCheck = savedAccess }
         let screen = try XCTUnwrap(try submenu(SettingsMenu.item(target: target), titled: "Settings").items.first { $0.title == "Screen" }?.submenu)
         XCTAssertEqual(screen.items.map(\.title), ["Keep the screen on while awake", "Look present at the screen",
                                                   "Turn the screen off when locked or closed"])
+    }
+
+    func testFixAccessibilityRowAppearsOnlyWhenEnabledWithoutPermission() throws {
+        let key = "lookPresent"
+        let defaults = UserDefaults.standard
+        let savedPref = defaults.object(forKey: key)
+        let savedAccess = ScreenPresence.hasAccessCheck
+        let savedRestart = ScreenPresence.needsRestartCheck
+        defer {
+            if let savedPref { defaults.set(savedPref, forKey: key) } else { defaults.removeObject(forKey: key) }
+            ScreenPresence.hasAccessCheck = savedAccess
+            ScreenPresence.needsRestartCheck = savedRestart
+        }
+
+        defaults.set(true, forKey: key)
+        ScreenPresence.hasAccessCheck = { false }
+        ScreenPresence.needsRestartCheck = { false }
+        let missingSettings = SettingsMenu.item(target: target)
+        let missingScreen = try XCTUnwrap(try submenu(missingSettings, titled: "Settings").items.first { $0.title == "Screen" })
+        XCTAssertTrue(try XCTUnwrap(missingScreen.submenu).items.map(\.title).contains("Fix Accessibility permission…"))
+        if #available(macOS 14.4, *) {
+            XCTAssertEqual(missingSettings.value(forKey: "subtitle") as? String, "Needs Accessibility")
+            XCTAssertEqual(missingScreen.value(forKey: "subtitle") as? String, "Needs Accessibility")
+        }
+
+        defaults.set(false, forKey: key)
+        let offSettings = SettingsMenu.item(target: target)
+        let offScreen = try XCTUnwrap(try submenu(offSettings, titled: "Settings").items.first { $0.title == "Screen" })
+        XCTAssertFalse(try XCTUnwrap(offScreen.submenu).items.map(\.title).contains("Fix Accessibility permission…"))
+        if #available(macOS 14.4, *) {
+            XCTAssertNotEqual(offSettings.value(forKey: "subtitle") as? String, "Needs Accessibility")
+            XCTAssertNotEqual(offScreen.value(forKey: "subtitle") as? String, "Needs Accessibility")
+        }
+
+        defaults.set(true, forKey: key)
+        ScreenPresence.hasAccessCheck = { true }
+        let grantedSettings = SettingsMenu.item(target: target)
+        let grantedScreen = try XCTUnwrap(try submenu(grantedSettings, titled: "Settings").items.first { $0.title == "Screen" })
+        XCTAssertFalse(try XCTUnwrap(grantedScreen.submenu).items.map(\.title).contains("Fix Accessibility permission…"))
+        if #available(macOS 14.4, *) {
+            XCTAssertNotEqual(grantedSettings.value(forKey: "subtitle") as? String, "Needs Accessibility")
+            XCTAssertNotEqual(grantedScreen.value(forKey: "subtitle") as? String, "Needs Accessibility")
+        }
+    }
+
+    func testRestartToApplyAccessibilityRowAppearsWhenRestartNeeded() throws {
+        let key = "lookPresent"
+        let defaults = UserDefaults.standard
+        let savedPref = defaults.object(forKey: key)
+        let savedAccess = ScreenPresence.hasAccessCheck
+        let savedRestart = ScreenPresence.needsRestartCheck
+        defer {
+            if let savedPref { defaults.set(savedPref, forKey: key) } else { defaults.removeObject(forKey: key) }
+            ScreenPresence.hasAccessCheck = savedAccess
+            ScreenPresence.needsRestartCheck = savedRestart
+        }
+
+        defaults.set(true, forKey: key)
+        ScreenPresence.hasAccessCheck = { false }
+        ScreenPresence.needsRestartCheck = { true }
+
+        let settings = SettingsMenu.item(target: target)
+        let screen = try XCTUnwrap(try submenu(settings, titled: "Settings").items.first { $0.title == "Screen" })
+        let items = try XCTUnwrap(screen.submenu).items.map(\.title)
+        XCTAssertTrue(items.contains("Restart to apply Accessibility…"))
+        XCTAssertFalse(items.contains("Fix Accessibility permission…"))
+        if #available(macOS 14.4, *) {
+            XCTAssertEqual(settings.value(forKey: "subtitle") as? String, "Restart to apply Accessibility")
+            XCTAssertEqual(screen.value(forKey: "subtitle") as? String, "Restart to apply Accessibility")
+        }
     }
 
     private let screenPath = "Settings > Screen > Look present at the screen"

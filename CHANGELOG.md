@@ -2,6 +2,12 @@
 
 Each release gets a `## x.y.z` heading and a few short `- ` lines. The update dialog shows the first four.
 
+## 1.3.8
+- General bug fixes so the app runs more steadily
+- Alerts now stop at once when Keep awake turns off or its countdown runs out, and no longer fire afterward
+- Look present at the screen now shows in Settings when Accessibility permission is missing or stale after an update, and helps reset and re-grant it cleanly
+- Look present at the screen now detects freshly granted Accessibility permission while running and offers a one-click Quit & Reopen so macOS applies it right away
+
 ## 1.3.7
 - Look present at the screen keeps working after an update: the Accessibility permission stays granted instead of being lost each time TBPK is replaced
 

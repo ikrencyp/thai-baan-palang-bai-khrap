@@ -4,13 +4,21 @@ import IOKit.ps
 
 @MainActor
 final class SystemChangeObserver {
+    private let lockCenter: NotificationCenter
+    private let workspaceCenter: NotificationCenter
     private let handler: () -> Void
     private var tokens: [(center: NotificationCenter, token: NSObjectProtocol)] = []
     private var powerSource: CFRunLoopSource?
     private var lidPort: IONotificationPortRef?
     private var lidNotifier: io_object_t = 0
 
-    init(onChange handler: @escaping () -> Void) {
+    init(
+        lockCenter: NotificationCenter = DistributedNotificationCenter.default(),
+        workspaceCenter: NotificationCenter = NSWorkspace.shared.notificationCenter,
+        onChange handler: @escaping () -> Void
+    ) {
+        self.lockCenter = lockCenter
+        self.workspaceCenter = workspaceCenter
         self.handler = handler
     }
 
@@ -37,8 +45,8 @@ final class SystemChangeObserver {
     }
 
     private func observeLockAndDisplay() {
-        let distributed = DistributedNotificationCenter.default()
-        let workspace = NSWorkspace.shared.notificationCenter
+        let distributed = lockCenter
+        let workspace = workspaceCenter
         let names: [(NotificationCenter, Notification.Name)] = [
             (distributed, Notification.Name("com.apple.screenIsLocked")),
             (distributed, Notification.Name("com.apple.screenIsUnlocked")),

@@ -2,6 +2,20 @@ import AppKit
 
 @MainActor
 enum SettingsMenu {
+    private static var needsLookPresentAccess: Bool {
+        StatusPreferences.lookPresent && !ScreenPresence.hasAccess
+    }
+
+    private static var needsLookPresentRestart: Bool {
+        StatusPreferences.lookPresent && ScreenPresence.needsRestartForAccess
+    }
+
+    private static var lookPresentSubtitle: String? {
+        if needsLookPresentRestart { return "Restart to apply Accessibility" }
+        if needsLookPresentAccess { return "Needs Accessibility" }
+        return nil
+    }
+
     static func item(target: StatusMenuTarget) -> NSMenuItem {
         let submenu = NSMenu()
         submenu.addItem(toggle("Show countdown", on: StatusPreferences.showCountdown,
@@ -13,7 +27,8 @@ enum SettingsMenu {
         submenu.addItem(toggle("Start at Login", on: LoginItem.isEnabled,
                                #selector(StatusMenuTarget.loginClicked), target))
         if UpdateStore.isOfferedHere() { submenu.addItem(updates(target: target)) }
-        return MenuParts.parent("Settings", symbol: "gearshape", subtitle: nil, submenu: submenu)
+        return MenuParts.parent("Settings", symbol: "gearshape",
+                                subtitle: lookPresentSubtitle, submenu: submenu)
     }
 
     // What the Mac does with its display while it is kept awake.
@@ -25,7 +40,17 @@ enum SettingsMenu {
                                #selector(StatusMenuTarget.lookPresentClicked), target))
         submenu.addItem(toggle("Turn the screen off when locked or closed", on: StatusPreferences.darkenWhenClosed,
                                #selector(StatusMenuTarget.darkenClicked), target))
-        return MenuParts.parent("Screen", symbol: "display", subtitle: nil, submenu: submenu)
+        if needsLookPresentRestart {
+            submenu.addItem(.separator())
+            submenu.addItem(MenuParts.action("Restart to apply Accessibility…", symbol: "arrow.clockwise",
+                                             #selector(StatusMenuTarget.fixLookPresentAccessClicked), target))
+        } else if needsLookPresentAccess {
+            submenu.addItem(.separator())
+            submenu.addItem(MenuParts.action("Fix Accessibility permission…", symbol: "hand.raised",
+                                             #selector(StatusMenuTarget.fixLookPresentAccessClicked), target))
+        }
+        return MenuParts.parent("Screen", symbol: "display",
+                                subtitle: lookPresentSubtitle, submenu: submenu)
     }
 
     // The same three switches as macOS Software Update: each one only counts while the one above it is on.

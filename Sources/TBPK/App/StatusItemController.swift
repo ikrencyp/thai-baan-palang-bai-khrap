@@ -285,8 +285,63 @@ final class StatusItemController: NSObject, StatusMenuTarget {
 
     @objc func lookPresentClicked() {
         StatusPreferences.toggleLookPresent()
-        if StatusPreferences.lookPresent { ScreenPresence.requestAccess() }
+        if StatusPreferences.lookPresent, !ScreenPresence.hasAccess, !ScreenPresence.needsRestartForAccess {
+            _ = ScreenPresence.requestAccess()
+        }
         governor?.evaluate()
+    }
+
+    @objc func fixLookPresentAccessClicked() {
+        if ScreenPresence.needsRestartForAccess {
+            presentRestartForAccessGuide()
+        } else if !ScreenPresence.hasAccess {
+            presentAccessibilityGuide()
+        }
+        governor?.evaluate()
+    }
+
+    private func presentRestartForAccessGuide() {
+        let alert = NSAlert()
+        alert.alertStyle = .informational
+        alert.messageText = "Restart to apply Accessibility"
+        alert.informativeText = """
+        macOS Accessibility permission was granted while \(AppInfo.name) was already running. Quit and reopen the app so macOS applies it to Look present at the screen.
+        """
+        alert.addButton(withTitle: "Quit & Reopen")
+        alert.addButton(withTitle: "Later")
+        if AlertPresenter.run(alert) == .alertFirstButtonReturn, ScreenPresence.scheduleRelaunch() {
+            NSApp.terminate(nil)
+        }
+    }
+
+    private func presentAccessibilityGuide() {
+        let alert = NSAlert()
+        alert.alertStyle = .informational
+        alert.messageText = "Accessibility permission is needed"
+        alert.informativeText = """
+        Look present at the screen sends a harmless key tap while the Mac is idle. macOS blocks it until \(AppInfo.name) is allowed in Privacy & Security > Accessibility.
+
+        If you updated from an earlier version and \(AppInfo.name) is already switched on there, choose Reset & Ask Again so macOS drops the earlier build\u{2019}s entry.
+        """
+        alert.addButton(withTitle: "Open Accessibility Settings")
+        alert.addButton(withTitle: "Reset & Ask Again")
+        alert.addButton(withTitle: "Later")
+        switch AlertPresenter.run(alert) {
+        case .alertFirstButtonReturn:
+            _ = ScreenPresence.requestAccess()
+            openAccessibilitySettings()
+        case .alertSecondButtonReturn:
+            _ = ScreenPresence.resetAccessRecord()
+            _ = ScreenPresence.requestAccess()
+            if !ScreenPresence.hasAccess { openAccessibilitySettings() }
+        default:
+            break
+        }
+    }
+
+    private func openAccessibilitySettings() {
+        guard let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") else { return }
+        NSWorkspace.shared.open(url)
     }
 
     @objc func leafColorClicked(_ item: NSMenuItem) {

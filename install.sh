@@ -110,6 +110,20 @@ echo "Copying to $(dirname "$APP_PATH")..."
 NEW_PATH="$APP_PATH.new"
 rm -rf "$NEW_PATH"
 ditto "$SOURCE" "$NEW_PATH" || { rm -rf "$NEW_PATH"; echo "Could not copy the app. The installed copy was not touched." >&2; exit 1; }
+# An earlier ad-hoc build signed with a cdhash requirement loses its Accessibility grant on replacement;
+# reset any stale TCC row so macOS can prompt cleanly (bundle-id-signed builds keep their grant).
+if [ -d "$APP_PATH" ] && [ -z "${TBPK_INSTALL_DIR:-}" ]; then
+  old_req=$(codesign -d -r- "$APP_PATH" 2>&1 || true)
+  new_req=$(codesign -d -r- "$SOURCE" 2>&1 || true)
+  case "$old_req" in
+    *cdhash*)
+      if [ "$old_req" != "$new_req" ]; then
+        echo "Refreshing Accessibility permission for the updated build..."
+        /usr/bin/tccutil reset Accessibility com.thaibaan.tbpk >/dev/null 2>&1 || true
+      fi
+      ;;
+  esac
+fi
 rm -rf "$APP_PATH"
 mv "$NEW_PATH" "$APP_PATH"
 

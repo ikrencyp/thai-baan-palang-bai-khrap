@@ -18,7 +18,8 @@ class StubMenuTarget: NSObject, StatusMenuTarget {
     func keepScreenClicked() {}
     func leafColorClicked(_ item: NSMenuItem) {}
     func customLeafColorClicked(_ item: NSMenuItem) {}
-    func lookPresentClicked() {}
+    @objc func lookPresentClicked() {}
+    @objc func fixLookPresentAccessClicked() {}
     func batterySaverClicked() {}
     func testAlertClicked() {}
     func alertSoundClicked(_ item: NSMenuItem) {}

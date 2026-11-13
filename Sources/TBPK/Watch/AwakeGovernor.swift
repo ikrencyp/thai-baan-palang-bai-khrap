@@ -20,10 +20,10 @@ final class AwakeGovernor {
         self.energy = energy
         subscriptions = [
             power.objectWillChange
-                .receive(on: RunLoop.main)
+                .receive(on: DispatchQueue.main)
                 .sink { [weak self] _ in self?.evaluate() },
             energy.objectWillChange
-                .receive(on: RunLoop.main)
+                .receive(on: DispatchQueue.main)
                 .sink { [weak self] _ in self?.retime() },
         ]
         evaluate()
@@ -31,16 +31,17 @@ final class AwakeGovernor {
 
     func evaluate() {
         power.expireIfDue()
-        batterySaver.sync(awake: power.isSleepDisabled && !power.isWorking)
-        guard power.isSleepDisabled, !power.isWorking else {
-            if !power.isSleepDisabled { release() }
+        batterySaver.sync(awake: power.isSleepDisabled && !power.isWorking && power.pendingValue != false)
+        guard power.isSleepDisabled, !power.isWorking, power.pendingValue != false else {
+            if !power.isSleepDisabled || power.pendingValue == false { release() }
             return
         }
         arm()
         let snapshot = UnattendedSnapshot.read(buzzing: true)
         if let reason = PowerLimit.stored.stopReason(onBattery: snapshot.onBattery, percent: snapshot.batteryPercent) {
-            power.stopForRule(reason: reason)
-            AttentionSound.playOnce()
+            if power.stopForRule(reason: reason) {
+                AttentionSound.playOnce()
+            }
             return
         }
         let darken = StatusPreferences.darkenWhenClosed

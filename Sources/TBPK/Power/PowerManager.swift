@@ -72,10 +72,12 @@ final class PowerManager: ObservableObject {
         }
     }
 
-    func stopForRule(reason: String) {
-        guard isSleepDisabled, !isWorking, SleepOwnership.isOwned else { return }
+    @discardableResult
+    func stopForRule(reason: String) -> Bool {
+        guard isSleepDisabled, !isWorking, SleepOwnership.isOwned else { return false }
         stopNotice = reason
         disable()
+        return true
     }
 
     func reschedule(_ duration: SleepDuration) {
@@ -147,6 +149,7 @@ final class PowerManager: ObservableObject {
             case .cancel: return
             }
         }
+        changeGeneration += 1
         isWorking = true
         pendingValue = value
         hasFailure = false
@@ -235,7 +238,7 @@ final class PowerManager: ObservableObject {
     }
 
     // The end is kept until the restore really worked: a restore that was busy or failed is tried again in 30 seconds,
-    // so the Mac is never left awake with no timer running. Without the silent rule a password prompt is not repeated.
+    // so the Mac is never left awake with no timer running.
     private func handleExpiry() {
         guard isSleepDisabled else {
             clearExpiry()
@@ -245,12 +248,13 @@ final class PowerManager: ObservableObject {
             retryExpiry()
             return
         }
-        if !passwordlessAvailable { clearExpiry() }
         statusMessage = PowerMessages.timeIsUp
-        disable(onFailure: { [weak self] in
-            guard let self, self.passwordlessAvailable else { return }
-            self.retryExpiry()
-        })
+        disable(onFailure: { [weak self] in self?.retryOrGiveUpExpiry() })
+    }
+
+    // Only the silent path is retried: a cancelled password prompt must not come back every 30 seconds.
+    private func retryOrGiveUpExpiry() {
+        if passwordlessAvailable { retryExpiry() } else { clearExpiry() }
     }
 
     private func retryExpiry() {

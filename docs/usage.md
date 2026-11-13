@@ -63,8 +63,8 @@ The three screen switches live in **Settings > Screen**:
 Chat apps such as Teams or Slack show you as away after a few minutes without mouse or keyboard input. Keep awake does not count as input, so you can show as away while the Mac is working for you. This switch fixes that.
 
 1. Click the leaf, open **Settings > Screen**, and choose **Look present at the screen**.
-2. macOS asks once to let the app control your computer. Open **System Settings > Privacy & Security > Accessibility** and turn on Thai Baan Palang Bai Khrap. Without it the switch does nothing.
-3. Turn on Keep awake and walk away. Every minute the app sends one mouse-moved event that moves nothing, so the Mac never looks idle.
+2. macOS asks once to let the app control your computer. Open **System Settings > Privacy & Security > Accessibility** and turn on Thai Baan Palang Bai Khrap. Without it the switch does nothing. If permission is missing or stopped working after an update, **Settings > Screen** shows **Needs Accessibility** with **Fix Accessibility permission…** so you can open Settings or reset and re-grant it. If permission is granted while TBPK is already running, **Settings > Screen** shows **Restart to apply Accessibility…** with a one-click **Quit & Reopen** prompt so macOS applies it right away.
+3. Turn on Keep awake and walk away. Every half minute while idle, the app sends one unused key tap (F19), so the Mac never looks idle.
 4. To stop, choose the same item again. Nothing is sent and idle time counts as before.
 
 It only runs while Keep awake is on and the screen is held. It stays quiet while the lid is shut or the screen is locked with **Turn the screen off when locked or closed** on. After an update, **What's new** shows where to find it, with a **Show me where** button that opens the menu.

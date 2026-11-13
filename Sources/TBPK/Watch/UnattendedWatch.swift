@@ -8,11 +8,25 @@ final class UnattendedWatch: ObservableObject {
     // change in the Mac. Between the two the watch sleeps, and never longer than the energy plan allows.
     private static let shortestWait: TimeInterval = 0.1
 
+    struct PowerState {
+        let isSleepDisabled: Bool
+        let pendingValue: Bool?
+        let expiresAt: Date?
+    }
+
     @Published private(set) var isAlerting = false
     @Published private(set) var lastEvent: UnattendedEvent?
 
-    private let power: PowerManager
     private let energy: EnergyMonitor
+    private let readPowerState: () -> PowerState
+    private let expirePowerIfDue: (Date) -> Void
+    private let refreshPower: () -> Void
+    private let systemSleepDisabled: () -> Bool
+    private let hasBatteryCheck: () -> Bool
+    private let readSnapshot: () -> UnattendedSnapshot
+    private let now: () -> Date
+    private let playAlert: () -> Void
+    private let stopAlert: () -> Void
     private var subscriptions: [AnyCancellable] = []
     private var decision = UnattendedDecision()
     private var timer: Timer?
@@ -20,17 +34,53 @@ final class UnattendedWatch: ObservableObject {
     private var activity: NSObjectProtocol?
     private lazy var observer = SystemChangeObserver { [weak self] in self?.tick() }
 
-    init(power: PowerManager, energy: EnergyMonitor? = nil) {
-        self.power = power
+    convenience init(power: PowerManager, energy: EnergyMonitor? = nil) {
+        self.init(
+            energy: energy,
+            powerChanges: power.objectWillChange.receive(on: DispatchQueue.main).eraseToAnyPublisher(),
+            powerState: {
+                PowerState(
+                    isSleepDisabled: power.isSleepDisabled,
+                    pendingValue: power.pendingValue,
+                    expiresAt: power.expiresAt
+                )
+            },
+            expireIfDue: { power.expireIfDue(now: $0) },
+            refreshPower: { power.refresh() }
+        )
+    }
+
+    init(
+        energy: EnergyMonitor? = nil,
+        powerChanges: AnyPublisher<Void, Never> = Empty<Void, Never>().eraseToAnyPublisher(),
+        powerState: @escaping () -> PowerState,
+        expireIfDue: @escaping (Date) -> Void = { _ in },
+        refreshPower: @escaping () -> Void = {},
+        systemSleepDisabled: @escaping () -> Bool = { PrivilegedShell.isSleepDisabled() },
+        hasBattery: @escaping () -> Bool = { UnattendedSnapshot.hasBattery },
+        readSnapshot: @escaping () -> UnattendedSnapshot = { UnattendedSnapshot.read(buzzing: true) },
+        now: @escaping () -> Date = Date.init,
+        playAlert: (@MainActor () -> Void)? = nil,
+        stopAlert: (@MainActor () -> Void)? = nil
+    ) {
         let energy = energy ?? .shared
         self.energy = energy
+        self.readPowerState = powerState
+        self.expirePowerIfDue = expireIfDue
+        self.refreshPower = refreshPower
+        self.systemSleepDisabled = systemSleepDisabled
+        self.hasBatteryCheck = hasBattery
+        self.readSnapshot = readSnapshot
+        self.now = now
+        self.playAlert = playAlert ?? { AttentionSound.play() }
+        self.stopAlert = stopAlert ?? { AttentionSound.stopAlert() }
         lastEvent = UnattendedEvent.stored
         subscriptions = [
-            power.objectWillChange.receive(on: RunLoop.main).sink { [weak self] _ in self?.reconcile() },
-            energy.objectWillChange.receive(on: RunLoop.main).sink { [weak self] _ in self?.reconcile() },
+            powerChanges.sink { [weak self] _ in self?.reconcile() },
+            energy.objectWillChange.receive(on: DispatchQueue.main).sink { [weak self] _ in self?.reconcile() },
         ]
         reconcile()
-        if !power.isSleepDisabled { clearRecord() }
+        if !powerState().isSleepDisabled { clearRecord() }
     }
 
     static var isAvailable: Bool { UnattendedSnapshot.hasBattery }
@@ -40,23 +90,52 @@ final class UnattendedWatch: ObservableObject {
         decision.endSession()
         apply(alerting: false)
         if mode == .off { clearRecord() }
-        reconcile()
+        reconcile(stopAlertIfWatching: true)
     }
 
     func setPowerCondition(_ condition: PowerCondition) {
         UserDefaults.standard.set(condition.rawValue, forKey: PowerCondition.storageKey)
         decision.endSession()
         apply(alerting: false)
+        stopAlert()
     }
 
-    // Only a Mac that is kept awake has anything to watch: when sleep is not disabled the timer, the observers and
-    // the "do not nap" request are all released.
-    private var wantsTicking: Bool {
-        LidWarningMode.stored != .off && Self.isAvailable && power.isSleepDisabled
+    // Watching stops as soon as sleep is back on, turning back on is already under way, or a timer has reached its end.
+    nonisolated static func shouldWatch(
+        mode: LidWarningMode,
+        hasBattery: Bool,
+        isSleepDisabled: Bool,
+        pendingValue: Bool?,
+        expiresAt: Date?,
+        now: Date
+    ) -> Bool {
+        guard mode != .off, hasBattery, isSleepDisabled else { return false }
+        if pendingValue == false { return false }
+        if let expiresAt, expiresAt <= now { return false }
+        return true
     }
 
-    private func reconcile() {
-        guard wantsTicking else { return settle() }
+    private func wantsTicking(at current: Date) -> Bool {
+        let state = readPowerState()
+        return Self.shouldWatch(
+            mode: LidWarningMode.stored,
+            hasBattery: hasBatteryCheck(),
+            isSleepDisabled: state.isSleepDisabled,
+            pendingValue: state.pendingValue,
+            expiresAt: state.expiresAt,
+            now: current
+        )
+    }
+
+    func reconcile() {
+        reconcile(stopAlertIfWatching: false)
+    }
+
+    private func reconcile(stopAlertIfWatching: Bool) {
+        let current = now()
+        expirePowerIfDue(current)
+        guard wantsTicking(at: current) else { return settle() }
+        if stopAlertIfWatching { stopAlert() }
         scheduleNext()
         observer.start()
         guard activity == nil else { return }
@@ -68,7 +147,7 @@ final class UnattendedWatch: ObservableObject {
     private func scheduleNext() {
         timer?.invalidate()
         let idle = energy.plan.idleWatchTick
-        let wait = decision.nextWake(mode: LidWarningMode.stored, now: Date()).map { min($0, idle) } ?? idle
+        let wait = decision.nextWake(mode: LidWarningMode.stored, now: now()).map { min($0, idle) } ?? idle
         let delay = max(wait, Self.shortestWait)
         let next = Timer(timeInterval: delay, repeats: false) { [weak self] _ in
             MainActor.assumeIsolated { self?.tick() }
@@ -81,6 +160,7 @@ final class UnattendedWatch: ObservableObject {
     private func settle() {
         decision.endSession()
         apply(alerting: false)
+        stopAlert()
         guard timer != nil || activity != nil else { return }
         timer?.invalidate()
         timer = nil
@@ -90,17 +170,31 @@ final class UnattendedWatch: ObservableObject {
         clearRecord()
     }
 
-    private func tick() {
+    func tick() {
         let mode = LidWarningMode.stored
-        guard mode != .off, power.isSleepDisabled else { return settle() }
-        let snapshot = UnattendedSnapshot.read(buzzing: true)
-        let event = decision.observe(snapshot, mode: mode, condition: PowerCondition.stored, now: Date())
+        let current = now()
+        expirePowerIfDue(current)
+        let state = readPowerState()
+        guard Self.shouldWatch(
+            mode: mode,
+            hasBattery: hasBatteryCheck(),
+            isSleepDisabled: state.isSleepDisabled,
+            pendingValue: state.pendingValue,
+            expiresAt: state.expiresAt,
+            now: current
+        ) else { return settle() }
+        let snapshot = readSnapshot()
+        let event = decision.observe(snapshot, mode: mode, condition: PowerCondition.stored, now: current)
+        if (decision.isAlerting || event != nil), !systemSleepDisabled() {
+            refreshPower()
+            return settle()
+        }
         apply(alerting: decision.isAlerting)
         scheduleNext()
         guard let event else { return }
         event.store()
         lastEvent = event
-        AttentionSound.play()
+        playAlert()
     }
 
     // Publish only real changes: a per-tick publish rebuilds an open menu under the pointer.

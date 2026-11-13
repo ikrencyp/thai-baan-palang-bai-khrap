@@ -2,6 +2,10 @@
 
 Each release gets a `## x.y.z` heading and a few short `- ` lines. The update dialog shows the first four.
 
+## 1.3.9
+- General bug fixes so the app runs more steadily
+- The update progress window no longer shows 0% before download bytes arrive or after the download finishes while the update is preparing and installing
+
 ## 1.3.8
 - General bug fixes so the app runs more steadily
 - Alerts now stop at once when Keep awake turns off or its countdown runs out, and no longer fire afterward

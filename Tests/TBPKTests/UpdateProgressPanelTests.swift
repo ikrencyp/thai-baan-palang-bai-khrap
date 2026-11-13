@@ -46,11 +46,15 @@ final class UpdateProgressPanelTests: XCTestCase {
         XCTAssertEqual(UpdateProgressPanel.percentText(7), "100%")
         UpdateProgressPanel.show("Downloading", detail: "wait", step: .download)
         defer { UpdateProgressPanel.hide() }
-        XCTAssertEqual(UpdateProgressPanel.percentLabel, "0%")
+        XCTAssertEqual(UpdateProgressPanel.percentLabel, "", "no made-up number before the first bytes")
+        XCTAssertTrue(UpdateProgressPanel.showsPercentField)
         UpdateProgressPanel.setProgress(0.6)
         UpdateProgressPanel.setProgress(0.3)
         XCTAssertEqual(UpdateProgressPanel.percentLabel, "60%")
+        UpdateProgressPanel.setProgress(1)
+        XCTAssertEqual(UpdateProgressPanel.percentLabel, "100%")
         UpdateProgressPanel.show("Preparing", detail: "wait", step: .prepare)
         XCTAssertNil(UpdateProgressPanel.percentLabel, "only the download shows a percent")
+        XCTAssertFalse(UpdateProgressPanel.showsPercentField, "later steps hide the percent label instead of showing 0%")
     }
 }

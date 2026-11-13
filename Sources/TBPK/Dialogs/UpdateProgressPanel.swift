@@ -54,8 +54,10 @@ enum UpdateProgressPanel {
         panel?.orderOut(nil)
     }
 
-    // The share of the download that is really in, as text; nil while the size is not known yet.
+    // The share of the download that is really in, as text; nil when the step does not report a percent.
     static var percentLabel: String? { showsPercent ? percent?.stringValue : nil }
+
+    static var showsPercentField: Bool { percent?.isHidden == false }
 
     static func percentText(_ fraction: Double) -> String {
         "\(Int((min(1, max(0, fraction)) * 100).rounded()))%"
@@ -72,15 +74,16 @@ enum UpdateProgressPanel {
     }
 
     // The bar shows during every step of an update. Only the download has a real share to report; the other steps
-    // have no honest number, so their bar just keeps moving.
+    // have no honest number, so their bar just keeps moving with no percent label.
     private static func showProgress(_ step: Step?) {
         guard let row = progressRow, let bar, let percent else { return }
         row.isHidden = step == nil
         showsPercent = step == .download
+        percent.isHidden = !showsPercent
+        percent.stringValue = "" // no number while the size is not known or after download finishes: the bar spins
         guard step != nil else { return bar.stopAnimation(nil) }
         bar.isIndeterminate = true
         bar.startAnimation(nil)
-        percent.stringValue = percentText(0)
     }
 
     static func stepText(_ step: Step, current: Step) -> NSAttributedString {

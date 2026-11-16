@@ -19,6 +19,7 @@ import AppKit
     @objc func customLeafColorClicked(_ item: NSMenuItem)
     @objc func lookPresentClicked()
     @objc func fixLookPresentAccessClicked()
+    @objc func presenceMotionClicked(_ item: NSMenuItem)
     @objc func presenceRhythmClicked(_ item: NSMenuItem)
     @objc func batterySaverClicked()
     @objc func testAlertClicked()

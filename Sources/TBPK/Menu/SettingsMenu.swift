@@ -2,67 +2,22 @@ import AppKit
 
 @MainActor
 enum SettingsMenu {
-    private static var needsLookPresentAccess: Bool {
-        StatusPreferences.lookPresent && !ScreenPresence.hasAccess
-    }
-
-    private static var needsLookPresentRestart: Bool {
-        StatusPreferences.lookPresent && ScreenPresence.needsRestartForAccess
-    }
-
-    private static var lookPresentSubtitle: String? {
-        if needsLookPresentRestart { return "Restart to apply Accessibility" }
-        if needsLookPresentAccess { return "Needs Accessibility" }
-        return nil
-    }
-
+    // Look present has its own menu (LookPresentMenu); the two screen switches sit here, one step below Settings.
     static func item(target: StatusMenuTarget) -> NSMenuItem {
         let submenu = NSMenu()
-        submenu.addItem(toggle("Show countdown", on: StatusPreferences.showCountdown,
-                               #selector(StatusMenuTarget.countdownClicked(_:)), target))
-        submenu.addItem(toggle("Leaf motion", on: StatusPreferences.showAnimation,
-                               #selector(StatusMenuTarget.animationClicked(_:)), target))
+        submenu.addItem(MenuParts.toggle("Show countdown", on: StatusPreferences.showCountdown,
+                                         #selector(StatusMenuTarget.countdownClicked(_:)), target))
+        submenu.addItem(MenuParts.toggle("Leaf motion", on: StatusPreferences.showAnimation,
+                                         #selector(StatusMenuTarget.animationClicked(_:)), target))
         submenu.addItem(LeafColorMenu.item(target: target))
-        submenu.addItem(screen(target: target))
-        submenu.addItem(toggle("Start at Login", on: LoginItem.isEnabled,
-                               #selector(StatusMenuTarget.loginClicked), target))
+        submenu.addItem(MenuParts.toggle("Keep the screen on while awake", on: StatusPreferences.keepScreenOn,
+                                         #selector(StatusMenuTarget.keepScreenClicked), target))
+        submenu.addItem(MenuParts.toggle("Turn the screen off when locked or closed", on: StatusPreferences.darkenWhenClosed,
+                                         #selector(StatusMenuTarget.darkenClicked), target))
+        submenu.addItem(MenuParts.toggle("Start at Login", on: LoginItem.isEnabled,
+                                         #selector(StatusMenuTarget.loginClicked), target))
         if UpdateStore.isOfferedHere() { submenu.addItem(updates(target: target)) }
-        return MenuParts.parent("Settings", symbol: "gearshape",
-                                subtitle: lookPresentSubtitle, submenu: submenu)
-    }
-
-    // What the Mac does with its display while it is kept awake.
-    private static func screen(target: StatusMenuTarget) -> NSMenuItem {
-        let submenu = NSMenu()
-        submenu.addItem(toggle("Keep the screen on while awake", on: StatusPreferences.keepScreenOn,
-                               #selector(StatusMenuTarget.keepScreenClicked), target))
-        submenu.addItem(toggle("Look present at the screen", on: StatusPreferences.lookPresent,
-                               #selector(StatusMenuTarget.lookPresentClicked), target))
-        submenu.addItem(presenceRhythm(target: target))
-        submenu.addItem(toggle("Turn the screen off when locked or closed", on: StatusPreferences.darkenWhenClosed,
-                               #selector(StatusMenuTarget.darkenClicked), target))
-        if needsLookPresentRestart {
-            submenu.addItem(.separator())
-            submenu.addItem(MenuParts.action("Restart to apply Accessibility…", symbol: "arrow.clockwise",
-                                             #selector(StatusMenuTarget.fixLookPresentAccessClicked), target))
-        } else if needsLookPresentAccess {
-            submenu.addItem(.separator())
-            submenu.addItem(MenuParts.action("Fix Accessibility permission…", symbol: "hand.raised",
-                                             #selector(StatusMenuTarget.fixLookPresentAccessClicked), target))
-        }
-        return MenuParts.parent("Screen", symbol: "display",
-                                subtitle: lookPresentSubtitle, submenu: submenu)
-    }
-
-    private static func presenceRhythm(target: StatusMenuTarget) -> NSMenuItem {
-        let submenu = NSMenu()
-        let stored = PresenceRhythm.stored
-        for choice in PresenceRhythm.allCases {
-            submenu.addItem(MenuParts.radio(choice.label, choice.rawValue, choice == stored,
-                                            #selector(StatusMenuTarget.presenceRhythmClicked(_:)), target))
-        }
-        return MenuParts.parent("Presence rhythm", symbol: "waveform.path",
-                                subtitle: stored.shortLabel, submenu: submenu)
+        return MenuParts.parent("Settings", symbol: "gearshape", subtitle: nil, submenu: submenu)
     }
 
     // The same three switches as macOS Software Update: each one only counts while the one above it is on.
@@ -100,11 +55,5 @@ enum SettingsMenu {
         guard checks else { return "Nothing runs on its own. Use Check for updates in the menu." }
         if installs { return "Looks every 6 hours, downloads, and installs while Keep awake is off." }
         return downloads ? "Looks every 6 hours and downloads. You press Update." : "Looks every 6 hours. You press Update."
-    }
-
-    private static func toggle(_ title: String, on: Bool, _ action: Selector, _ target: StatusMenuTarget) -> NSMenuItem {
-        let item = MenuParts.action(title, symbol: nil, action, target)
-        item.state = on ? .on : .off
-        return item
     }
 }

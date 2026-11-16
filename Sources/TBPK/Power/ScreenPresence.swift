@@ -1,9 +1,11 @@
 import ApplicationServices
 import Foundation
 
-// While on, one tap of F19 (a key no app or keyboard maps by default) is posted every half minute, but only when the
-// Mac is idle, unlocked and lit. macOS counts it as input, so the Mac does not look idle to other apps. A key tap, unlike
-// a mouse move, never wakes a status item tooltip, a menu, a hot corner or the Dock, wherever the pointer rests.
+// While on, a small move is posted every half minute (Steady) or at irregular gaps (Random), but only when the Mac is
+// idle, unlocked and lit. macOS counts it as input, so the Mac does not look idle to other apps. The move is the pointer
+// stepping a few pixels to the right and straight back, which resets the idle time the way a hand on the mouse does. A pointer that
+// rests in the menu bar, on a screen edge or in a corner is over something that reacts to a move (a status item tooltip,
+// a menu, a hot corner, the Dock), so there one tap of F19, a key no app or keyboard maps by default, goes out instead.
 // Off: nothing is posted and the idle time runs as it did before.
 //
 // The timer is strict and the app holds an activity while it runs: a menu bar app with no window is otherwise
@@ -119,10 +121,15 @@ final class ScreenPresence {
         activity = ProcessInfo.processInfo.beginActivity(
             options: .userInitiatedAllowingIdleSystemSleep, reason: "Look present at the screen")
         let next = DispatchSource.makeTimerSource(flags: .strict, queue: .main)
-        next.schedule(deadline: .now() + Self.interval, repeating: Self.interval, leeway: .seconds(1))
         next.setEventHandler { [weak self] in MainActor.assumeIsolated { self?.pulse() } }
-        next.resume()
         timer = next
+        scheduleNext()
+        next.resume()
+    }
+
+    // One shot per pulse, so Random can pick a new gap each time and a change in the menu counts from the next one.
+    private func scheduleNext() {
+        timer?.schedule(deadline: .now() + PresenceMotion.stored.nextGap(), repeating: .never, leeway: .seconds(1))
     }
 
     // Only an idle, unlocked, lit Mac gets the pulse: a pulse while someone types, or on the lock screen, can
@@ -133,9 +140,58 @@ final class ScreenPresence {
 
     nonisolated static let keyCode: CGKeyCode = 80
 
+    // A step smaller than this does not reset the system idle time (measured: 1px did not, 3px did).
+    nonisolated static let nudgeDistance: CGFloat = 4
+    nonisolated static let nudgeReturnDelay: DispatchTimeInterval = .milliseconds(80)
+
+    // A pointer resting in the menu bar, on a screen edge or in a corner is over something that reacts to a move: a
+    // status item tooltip that then floats, a menu that opens, a hot corner, the Dock. It is only moved when it is clear
+    // of all of those (top: the menu bar and the notch, with room for a tooltip).
+    nonisolated static let topClearance: CGFloat = 60
+    nonisolated static let edgeClearance: CGFloat = 40
+
+    nonisolated static func isClearSpot(_ point: CGPoint, in displays: [CGRect]) -> Bool {
+        guard let display = displays.first(where: { $0.contains(point) }) else { return false }
+        return point.y - display.minY >= topClearance
+            && display.maxY - point.y >= edgeClearance
+            && point.x - display.minX >= edgeClearance
+            && display.maxX - point.x >= edgeClearance
+    }
+
+    // Where the pointer steps to before it comes straight back, or nil when it is not in the open and a key tap is used.
+    nonisolated static func nudgeTarget(from location: CGPoint, in displays: [CGRect]) -> CGPoint? {
+        guard isClearSpot(location, in: displays) else { return nil }
+        return CGPoint(x: location.x + nudgeDistance, y: location.y)
+    }
+
+    private static var displayBounds: [CGRect] {
+        var count: UInt32 = 0
+        var ids = [CGDirectDisplayID](repeating: 0, count: 16)
+        guard CGGetActiveDisplayList(16, &ids, &count) == .success else { return [] }
+        return ids.prefix(Int(count)).map { CGDisplayBounds($0) }
+    }
+
+    private nonisolated static func postPointer(to point: CGPoint) {
+        let source = CGEventSource(stateID: .hidSystemState)
+        guard let event = CGEvent(mouseEventSource: source, mouseType: .mouseMoved, mouseCursorPosition: point,
+                                  mouseButton: .left) else { return }
+        event.flags = []
+        event.post(tap: .cghidEventTap)
+    }
+
+    private nonisolated static func postKeyTap() {
+        let source = CGEventSource(stateID: .hidSystemState)
+        for isDown in [true, false] {
+            guard let event = CGEvent(keyboardEventSource: source, virtualKey: keyCode, keyDown: isDown) else { continue }
+            event.flags = []
+            event.post(tap: .cghidEventTap)
+        }
+    }
+
     // Posting input needs the Accessibility permission; without it macOS drops the event. The first miss asks for the
     // permission again (the grant is lost when the app file changes) and every change of outcome is logged.
     private func pulse() {
+        defer { scheduleNext() }
         guard Self.hasAccess else {
             handleMissingAccess()
             return
@@ -162,13 +218,14 @@ final class ScreenPresence {
             record("skipped (idle \(Int(idle))s, locked \(snapshot.screenLocked))")
             return
         }
-        let source = CGEventSource(stateID: .hidSystemState)
-        for isDown in [true, false] {
-            guard let event = CGEvent(keyboardEventSource: source, virtualKey: Self.keyCode, keyDown: isDown) else { continue }
-            event.flags = []
-            event.post(tap: .cghidEventTap)
+        if let origin = CGEvent(source: nil)?.location, let target = Self.nudgeTarget(from: origin, in: Self.displayBounds) {
+            Self.postPointer(to: target)
+            DispatchQueue.main.asyncAfter(deadline: .now() + Self.nudgeReturnDelay) { Self.postPointer(to: origin) }
+            record("moved the pointer")
+        } else {
+            Self.postKeyTap()
+            record("tapped a key")
         }
-        record("posted")
     }
 
     private func handleMissingAccess() {

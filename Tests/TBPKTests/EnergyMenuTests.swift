@@ -40,16 +40,18 @@ final class EnergyMenuTests: XCTestCase {
         XCTAssertEqual(toggle.state, .off)
     }
 
-    func testSeparateOnShowsOneListPerPowerSourceEachTickingItsOwnChoice() throws {
+    func testSeparateOnShowsOneSectionPerPowerSourceEachTickingItsOwnChoice() throws {
         let items = try menu(.full, .standard, .init(onBattery: true), battery: .saver, separate: true).items
         XCTAssertEqual(items.first { $0.title == "Set charger and battery separately" }?.state, .on)
-        func ticked(_ title: String) throws -> [String] {
-            let sub = try XCTUnwrap(items.first { $0.title == title }?.submenu)
-            XCTAssertEqual(sub.items.compactMap { ($0.representedObject as? EnergyProfile.Pick)?.slot }.count, 3)
-            return sub.items.filter { $0.state == .on }.map(\.title)
+        XCTAssertFalse(items.contains { $0.submenu != nil }, "both sources are open in one list")
+        func ticked(_ header: String) throws -> [String] {
+            let start = try XCTUnwrap(items.firstIndex { $0.title == header }) + 1
+            let rows = items[start...].prefix { ($0.representedObject as? EnergyProfile.Pick) != nil }
+            XCTAssertEqual(rows.count, 3)
+            return rows.filter { $0.state == .on }.map(\.title)
         }
-        XCTAssertEqual(try ticked("On the charger"), [EnergyProfile.full.title])
-        XCTAssertEqual(try ticked("On battery"), [EnergyProfile.saver.title])
+        XCTAssertEqual(try ticked("ON THE CHARGER"), [EnergyProfile.full.title])
+        XCTAssertEqual(try ticked("ON BATTERY"), [EnergyProfile.saver.title])
     }
 
     func testTheMenuLineFollowsTheChoiceOfTheSourceInUse() throws {
@@ -92,7 +94,8 @@ final class EnergyMenuTests: XCTestCase {
         try row("Set charger and battery separately").1.performPick()
         await MainActor.run {}
         try await Task.sleep(nanoseconds: 100_000_000)
-        XCTAssertEqual(menu.items.filter { $0.submenu != nil }.map(\.title), ["On the charger", "On battery"])
+        XCTAssertTrue(menu.items.contains { $0.title == "ON THE CHARGER" } && menu.items.contains { $0.title == "ON BATTERY" })
+        XCTAssertFalse(menu.items.contains { $0.submenu != nil })
         XCTAssertEqual(try row("Set charger and battery separately").0.state, .on)
         XCTAssertTrue(parent.title == "Energy use" && menu.items.contains { $0.title.hasPrefix("Right now:") })
     }

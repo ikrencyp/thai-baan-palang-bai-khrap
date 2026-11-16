@@ -6,34 +6,34 @@ enum LeafColorMenu {
         item(target: target, charger: .stored(.charger), battery: .stored(.battery))
     }
 
+    // Both slots sit in one list under their own headers, so a colour is two steps from Settings, not three.
     static func item(target: StatusMenuTarget, charger: LeafColor, battery: LeafColor) -> NSMenuItem {
         let submenu = NSMenu()
-        submenu.addItem(MenuParts.parent("On the charger", symbol: "bolt.fill", subtitle: charger.name,
-                                         submenu: palette(.charger, stored: charger, target: target)))
-        submenu.addItem(MenuParts.parent("On battery", symbol: "battery.75", subtitle: battery.name,
-                                         submenu: palette(.battery, stored: battery, target: target)))
+        addPalette("On the charger", .charger, stored: charger, to: submenu, target: target)
+        submenu.addItem(.separator())
+        addPalette("On battery", .battery, stored: battery, to: submenu, target: target)
         submenu.addItem(.separator())
         submenu.addItem(MenuParts.info("Both show while Keep awake is on. An alert shows the battery colour."))
         return MenuParts.parent("Leaf colour", symbol: "paintpalette", subtitle: "\(charger.name) / \(battery.name)",
                                 submenu: submenu)
     }
 
-    private static func palette(_ slot: LeafColor.Slot, stored: LeafColor, target: StatusMenuTarget) -> NSMenu {
-        let submenu = NSMenu()
+    private static func addPalette(_ header: String, _ slot: LeafColor.Slot, stored: LeafColor, to menu: NSMenu,
+                                   target: StatusMenuTarget) {
+        menu.addItem(MenuParts.sectionHeader(header))
         for choice in LeafColor.choices {
             let row = MenuParts.radio(choice.name, LeafColor.Pick(slot: slot, color: choice.color), choice.color == stored,
                                       #selector(StatusMenuTarget.leafColorClicked(_:)), target)
             row.image = swatch(choice.color)
-            submenu.addItem(row)
+            menu.addItem(row)
         }
-        submenu.addItem(.separator())
+        menu.addItem(.separator())
         let custom = MenuParts.action(stored.isCustom ? "Custom \(stored.hex)..." : "Custom colour...", symbol: nil,
                                       #selector(StatusMenuTarget.customLeafColorClicked(_:)), target)
         custom.representedObject = slot
         custom.state = stored.isCustom ? .on : .off
         if stored.isCustom { custom.image = swatch(stored) }
-        submenu.addItem(custom)
-        return submenu
+        menu.addItem(custom)
     }
 
     // A round dot of the colour with a thin edge, so white and pale colours stay visible on a light menu.

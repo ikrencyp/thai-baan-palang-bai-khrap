@@ -52,33 +52,35 @@ If your Mac is muted or very quiet, the app turns the speaker up so you can hear
 - **Low Power Mode while on battery** (off by default): while the Mac is kept awake, it also runs in Low Power Mode on battery. The old setting is put back afterwards. Switching it on asks for your password once and adds the same no-password file as "Allow, no password after this" (see [Permissions](permissions.md)), even if you chose to be asked every time.
 - **Energy use**: how hard the app works to look alive (see below). Its choices stay open, so you can pick one and watch the **Right now** line change.
 
-The three screen switches live in **Settings > Screen**:
-
+The two screen switches sit in **Settings**:
 - **Keep the screen on while awake** (on by default): the screen does not go dark by itself. Turn it off and the Mac follows its normal screen timeout, but still stays awake.
-- **Look present at the screen** (off by default): see below.
 - **Turn the screen off when locked or closed** (off on a new install; an install that already ran keeps it on): the screen goes dark when you lock it or shut the lid.
+
+**Look present at the screen** has its own item in the menu, **Look present** (see below).
 
 ### Look present at the screen
 
-Chat apps such as Teams or Slack show you as away after a few minutes without mouse or keyboard input. Keep awake does not count as input, so you can show as away while the Mac is working for you. This switch fixes that.
+Chat apps such as Teams or Slack show you as away after a few minutes without mouse or keyboard input. Keep awake does not count as input, so you can show as away while the Mac is working for you. **Look present** keeps the Mac from looking idle, which is what those apps go by.
 
-1. Click the leaf, open **Settings > Screen**, and choose **Look present at the screen**.
-2. macOS asks once to let the app control your computer. Open **System Settings > Privacy & Security > Accessibility** and turn on Thai Baan Palang Bai Khrap. Without it the switch does nothing. If permission is missing or stopped working after an update, **Settings > Screen** shows **Needs Accessibility** with **Fix Accessibility permission…** so you can open Settings or reset and re-grant it. If permission is granted while TBPK is already running, **Settings > Screen** shows **Restart to apply Accessibility…** with a one-click **Quit & Reopen** prompt so macOS applies it right away.
-3. Turn on Keep awake and walk away. Every half minute while idle, the app sends one unused key tap (F19), so the Mac never looks idle.
-4. To customize the pacing, open **Settings > Screen > Presence rhythm** and pick a preset:
-   - **Continuous (always green)**: keeps the Mac active without pauses (the default).
+1. Click the leaf, open **Look present**, and choose **Look present at the screen**.
+2. macOS asks once to let the app control your computer. Open **System Settings > Privacy & Security > Accessibility** and turn on Thai Baan Palang Bai Khrap. Without it the switch does nothing. If permission is missing or stopped working after an update, **Look present** shows **Needs Accessibility** with **Fix Accessibility permission…** so you can open Settings or reset and re-grant it. If permission is granted while TBPK is already running, it shows **Restart to apply Accessibility…** with a one-click **Quit & Reopen** prompt so macOS applies it right away.
+3. Turn on Keep awake and walk away. While the Mac is idle, the app moves the pointer a few pixels to the right and straight back. If the pointer rests in the menu bar, on a screen edge or in a corner, it taps one unused key (F19) instead, so nothing opens or floats.
+4. Under **Movement**, pick how the moves are spaced:
+   - **Steady (every 30 seconds)**: one move every half minute (the default).
+   - **Random (every 20 to 60 seconds)**: a different wait each time, so it does not tick like a clock.
+5. Under **Breaks**, optionally let it rest now and then. A break longer than five minutes can show you as away in a chat app, so the default is **No breaks (always green)**:
    - **Deep focus (45–90m work, 0–8m break)**: long active stretches with occasional tiny breaks.
    - **Balanced (30–60m work, 3–15m break)**: standard workday rhythm with natural pauses.
    - **Relaxed (20–40m work, 5–18m break)**: frequent breaks for reading or discussion days.
-5. To stop, choose the same item again. Nothing is sent and idle time counts as before.
+6. To stop, choose **Look present at the screen** again. Nothing is sent and idle time counts as before.
 
-It only runs while Keep awake is on and the screen is held. It stays quiet while the lid is shut or the screen is locked with **Turn the screen off when locked or closed** on. After an update, **What's new** shows where to find it, with a **Show me where** button that opens the menu.
+The line under **Look present** says what it is doing: **Steady** or **Random** when it works, and otherwise why not: **Off**, **Needs Accessibility**, **Waiting for Keep awake** or **Needs the screen kept on** (turn on **Settings > Keep the screen on while awake**). It only runs while Keep awake is on and the screen is held. It stays quiet while the lid is shut or the screen is locked with **Turn the screen off when locked or closed** on. After an update, **What's new** shows where to find it, with a **Show me where** button that opens the menu.
 
 ## Leaf colour
 
 **Settings > Leaf colour** has two colours: **On the charger** (green by default) and **On battery** (red by default). The leaf shows the first while the Mac is charging and the second while it runs on battery or an alert is showing. The flame around it stays golden.
 
-1. Click the leaf, open **Settings > Leaf colour**, then **On the charger** or **On battery**.
+1. Click the leaf and open **Settings > Leaf colour**. The list has a part for **On the charger** and a part for **On battery**.
 2. Pick one of nine colours, or **Custom colour...** and type a code such as `#FF8800` (`FF8800` and the short `#F80` work too). A wrong code is explained and asked again.
 3. The menu bar, the **Staying awake** row and **How to use** change at once.
 

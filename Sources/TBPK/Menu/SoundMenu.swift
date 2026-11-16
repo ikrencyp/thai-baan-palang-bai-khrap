@@ -18,13 +18,18 @@ enum SoundMenu {
     }
 
     // The sound rows when they sit inside another menu (Alerts): the choices fold into one "Sound" row, so the count and
-    // the volume stay one click away. `group` is shared with the host menu so its own lines refresh with every pick.
+    // the volume stay one click away. The Mac sounds are listed inside it under their own header and Remove sits beside
+    // it, so no choice is more than three levels deep. `group` is shared with the host menu so its own lines refresh
+    // with every pick.
     static func rows(target: StatusMenuTarget, group: MenuRefresher) -> [NSMenuItem] {
         let choices = NSMenu()
-        addChoices(to: choices, target: target, group: group)
+        addChoices(to: choices, target: target, group: group, nesting: false)
         let sound = MenuParts.parent("Sound", symbol: "music.note", subtitle: AlertSound.stored.displayName, submenu: choices)
         group.add { MenuParts.setSubtitle(AlertSound.stored.displayName, on: sound) }
-        return [sound, beepCount(target: target, group: group), volume(target: target)]
+        var rows = [sound]
+        let mine = CustomSoundLibrary.sounds
+        if !mine.isEmpty { rows.append(removeChoices(mine, target: target)) }
+        return rows + [beepCount(target: target, group: group), volume(target: target)]
     }
 
     static func percentText(_ level: Float32) -> String {
@@ -32,7 +37,7 @@ enum SoundMenu {
     }
 
     // Two groups, so it is clear where a sound comes from: added by the person, owned by macOS.
-    private static func addChoices(to menu: NSMenu, target: StatusMenuTarget, group: MenuRefresher) {
+    private static func addChoices(to menu: NSMenu, target: StatusMenuTarget, group: MenuRefresher, nesting: Bool = true) {
         menu.addItem(MenuParts.info("Pick a sound, then press play below"))
         menu.addItem(.separator())
         menu.addItem(MenuParts.sectionHeader("My sounds"))
@@ -40,9 +45,19 @@ enum SoundMenu {
         mine.forEach { menu.addItem(choice($0, target: target, group: group)) }
         menu.addItem(MenuParts.action("Add sound files…", symbol: "plus.circle",
                                       #selector(StatusMenuTarget.chooseSoundClicked), target))
+        guard nesting else {
+            menu.addItem(.separator())
+            menu.addItem(MenuParts.sectionHeader("Mac sounds"))
+            macChoices(target: target, group: group).forEach(menu.addItem)
+            return
+        }
         if !mine.isEmpty { menu.addItem(removeChoices(mine, target: target)) }
         menu.addItem(.separator())
         menu.addItem(macSounds(target: target, group: group))
+    }
+
+    private static func macChoices(target: StatusMenuTarget, group: MenuRefresher) -> [NSMenuItem] {
+        AlertSound.available.filter { !$0.isCustom }.map { choice($0, target: target, group: group) }
     }
 
     // A row that picks the sound and leaves the menu open. The item keeps its action, so the keyboard still works.
@@ -56,7 +71,7 @@ enum SoundMenu {
     private static func macSounds(target: StatusMenuTarget, group: MenuRefresher) -> NSMenuItem {
         let submenu = NSMenu()
         let sounds = AlertSound.available.filter { !$0.isCustom }
-        sounds.forEach { submenu.addItem(choice($0, target: target, group: group)) }
+        macChoices(target: target, group: group).forEach(submenu.addItem)
         let subtitle = { sounds.contains(AlertSound.stored) ? AlertSound.stored.displayName : nil }
         let parent = MenuParts.parent("Mac sounds", symbol: "desktopcomputer", subtitle: subtitle(), submenu: submenu)
         group.add { subtitle().map { MenuParts.setSubtitle($0, on: parent) } }

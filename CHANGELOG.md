@@ -2,6 +2,13 @@
 
 Each release gets a `## x.y.z` heading and a few short `- ` lines. The update dialog shows the first four.
 
+## 1.4.1
+- Update now goes straight to the newest version: pressing Update looks again first, so a version found earlier no longer needs a second update after it
+- Look present at the screen now moves the pointer a few pixels and straight back, so the Mac does not look idle to chat apps such as Teams; near the menu bar, a screen edge or a corner it taps a key instead
+- Look present has its own menu with Movement (Steady every 30 seconds, or Random every 20 to 60 seconds) and Breaks, and says under its name why it is not moving, such as Waiting for Keep awake or Needs Accessibility
+- The menu is shallower: Look present has its own item, the two screen switches sit directly in Settings, and Leaf colour, Energy use and the alert sound list their choices in one list, so no choice is more than three levels deep
+- Find it: Look present
+
 ## 1.4.0
 - Look present at the screen now includes Presence rhythm presets (Continuous, Deep focus, Balanced, Relaxed) to alternate active and resting pauses naturally
 

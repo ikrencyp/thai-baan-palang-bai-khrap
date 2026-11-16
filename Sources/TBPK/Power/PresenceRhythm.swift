@@ -23,19 +23,10 @@ enum PresenceRhythm: String, CaseIterable {
 
     var label: String {
         switch self {
-        case .continuous: return "Continuous (always green)"
+        case .continuous: return "No breaks (always green)"
         case .deepFocus: return "Deep focus (45–90m work, 0–8m break)"
         case .balanced: return "Balanced (30–60m work, 3–15m break)"
         case .relaxed: return "Relaxed (20–40m work, 5–18m break)"
-        }
-    }
-
-    var shortLabel: String {
-        switch self {
-        case .continuous: return "Continuous"
-        case .deepFocus: return "Deep focus"
-        case .balanced: return "Balanced"
-        case .relaxed: return "Relaxed"
         }
     }
 

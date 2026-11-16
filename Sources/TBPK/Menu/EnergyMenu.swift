@@ -83,8 +83,9 @@ enum EnergyMenu {
 
     private static func populate(_ menu: NSMenu, _ snapshot: Snapshot, target: StatusMenuTarget, live: Live?) {
         if snapshot.separate {
-            menu.addItem(slotMenu("On the charger", symbol: "bolt.fill", slot: .charger, snapshot: snapshot, target: target, live: live))
-            menu.addItem(slotMenu("On battery", symbol: "battery.75", slot: .battery, snapshot: snapshot, target: target, live: live))
+            slotSection("On the charger", .charger, in: menu, snapshot: snapshot, target: target, live: live)
+            menu.addItem(.separator())
+            slotSection("On battery", .battery, in: menu, snapshot: snapshot, target: target, live: live)
         } else {
             choices(.charger, snapshot: snapshot, in: menu, target: target, live: live)
         }
@@ -104,13 +105,11 @@ enum EnergyMenu {
                                   pick: { [live, weak item] in item.map(live.pressSeparate) })
     }
 
-    private static func slotMenu(_ title: String, symbol: String, slot: EnergyProfile.Slot, snapshot: Snapshot,
-                                 target: StatusMenuTarget, live: Live?) -> NSMenuItem {
-        let submenu = NSMenu()
-        choices(slot, snapshot: snapshot, in: submenu, target: target, live: live)
-        let parent = MenuParts.parent(title, symbol: symbol, subtitle: snapshot.slotSubtitle(slot), submenu: submenu)
-        live?.group.add { [weak parent] in parent.map { MenuParts.setSubtitle(Snapshot.live().slotSubtitle(slot), on: $0) } }
-        return parent
+    // Both sources sit in one list under their own headers, so no choice is deeper than Power rules > Energy use.
+    private static func slotSection(_ title: String, _ slot: EnergyProfile.Slot, in menu: NSMenu, snapshot: Snapshot,
+                                    target: StatusMenuTarget, live: Live?) {
+        menu.addItem(MenuParts.sectionHeader(title))
+        choices(slot, snapshot: snapshot, in: menu, target: target, live: live)
     }
 
     private static func choices(_ slot: EnergyProfile.Slot, snapshot: Snapshot, in menu: NSMenu, target: StatusMenuTarget,

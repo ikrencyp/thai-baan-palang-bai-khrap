@@ -300,6 +300,13 @@ final class StatusItemController: NSObject, StatusMenuTarget {
         governor?.evaluate()
     }
 
+    @objc func presenceMotionClicked(_ item: NSMenuItem) {
+        guard let raw = item.representedObject as? String, let motion = PresenceMotion(rawValue: raw) else { return }
+        motion.store()
+        governor?.evaluate()
+        render()
+    }
+
     @objc func presenceRhythmClicked(_ item: NSMenuItem) {
         guard let raw = item.representedObject as? String, let rhythm = PresenceRhythm(rawValue: raw) else { return }
         rhythm.store()
@@ -326,7 +333,7 @@ final class StatusItemController: NSObject, StatusMenuTarget {
         alert.alertStyle = .informational
         alert.messageText = "Accessibility permission is needed"
         alert.informativeText = """
-        Look present at the screen sends a harmless key tap while the Mac is idle. macOS blocks it until \(AppInfo.name) is allowed in Privacy & Security > Accessibility.
+        Look present at the screen moves the pointer a few pixels and back (or taps an unused key) while the Mac is idle. macOS blocks it until \(AppInfo.name) is allowed in Privacy & Security > Accessibility.
 
         If you updated from an earlier version and \(AppInfo.name) is already switched on there, choose Reset & Ask Again so macOS drops the earlier build\u{2019}s entry.
         """

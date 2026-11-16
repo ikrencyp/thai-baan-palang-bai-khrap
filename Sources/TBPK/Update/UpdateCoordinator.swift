@@ -9,6 +9,10 @@ final class UpdateCoordinator {
     private(set) var phase: Phase = .idle { didSet { onChange?() } }
     var onChange: (() -> Void)?
 
+    // Tests replace these two: the request to GitHub, and what is done once a version is chosen (the install dialog).
+    var lookUp: () async -> UpdateSource.Lookup = { await UpdateSource.lookUp() }
+    var offer: (@MainActor (String) -> Void)?
+
     var pending: AppVersion? {
         AppVersion(AppInfo.version).flatMap { UpdateStore.pending(current: $0) }
     }
@@ -59,27 +63,48 @@ final class UpdateCoordinator {
         UpdateStore.clearDownload().map { try? FileManager.default.removeItem(at: $0) }
     }
 
+    // What the last check found, taken before a new one: a look-up that fails or finds nothing installable leaves it standing.
+    private struct EarlierFind {
+        let version: AppVersion
+        let notes: String?
+        let assets: (dmg: URL, checksum: URL)?
+    }
+
+    private func earlierFind() -> EarlierFind? {
+        pending.map { EarlierFind(version: $0, notes: UpdateStore.pendingNotes(), assets: UpdateStore.availableAssets()) }
+    }
+
     func checkAndReport() {
         guard phase == .idle else { return }
+        let earlier = earlierFind()
         Task {
             UpdateProgressPanel.show("Checking for updates…", detail: "Looking for the newest version. This usually takes a few seconds.")
             let outcome = await check()
             UpdateProgressPanel.hide()
             switch outcome {
-            case .upToDate: report("You are up to date", "\(AppInfo.versionLine) is the newest version.")
-            case .unreachable where UpdateStore.hasReachedRepository():
-                report("Could not check for updates", "GitHub is not reachable right now. Try again later.")
+            case .available(let version):
+                confirmInstall(of: version)
+            case .upToDate:
+                guard let earlier else { return report("You are up to date", "\(AppInfo.versionLine) is the newest version.") }
+                // The newest release is not installable yet (its signature may still be on its way), so the earlier
+                // find, which check() has just forgotten, still stands.
+                UpdateStore.record(found: earlier.version, notes: earlier.notes, assets: earlier.assets)
+                confirmInstall(of: earlier.version.text)
             case .unreachable:
+                if let earlier { return confirmInstall(of: earlier.version.text) }
+                if UpdateStore.hasReachedRepository() {
+                    return report("Could not check for updates", "GitHub is not reachable right now. Try again later.")
+                }
                 report("Updates are not available on this Mac",
                        "This Mac cannot reach GitHub, so it cannot check or install updates. The update items are hidden from now on. New versions are on the project's GitHub Releases page.")
-            case .available(let version): confirmInstall(of: version)
             }
         }
     }
 
+    // The menu item names the version found earlier, but a newer release may have come out since. Pressing it looks
+    // again first, so one update goes from any older version straight to the newest.
     func installPending() {
-        guard phase == .idle, let version = pending else { return checkAndReport() }
-        confirmInstall(of: version.text)
+        checkAndReport()
     }
 
     // One small request to the GitHub releases API; the dmg is downloaded only when a newer version exists.
@@ -87,7 +112,7 @@ final class UpdateCoordinator {
         phase = .checking
         defer { phase = .idle }
         let current = AppVersion(AppInfo.version)
-        switch await UpdateSource.lookUp() {
+        switch await lookUp() {
         case .unreachable:
             UpdateStore.recordFailure()
             return .unreachable
@@ -102,6 +127,7 @@ final class UpdateCoordinator {
     }
 
     private func confirmInstall(of version: String) {
+        if let offer { return offer(version) }
         UpdateStore.markAnnounced(version)
         let ready = AppVersion(version).flatMap { UpdateStore.downloadedRoot(for: $0) } != nil
         let alert = NSAlert()

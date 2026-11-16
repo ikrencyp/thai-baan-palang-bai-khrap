@@ -18,6 +18,7 @@ enum StatusMenuBuilder {
             ? AlertsMenu.item(power: power, watch: watch, target: target)
             : SoundMenu.item(target: target))
         menu.addItem(PowerRulesMenu.item(target: target))
+        menu.addItem(LookPresentMenu.item(power: power, target: target))
         menu.addItem(SettingsMenu.item(target: target))
 
         menu.addItem(.separator())

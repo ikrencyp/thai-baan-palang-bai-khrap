@@ -111,16 +111,15 @@ final class MenuTests: XCTestCase {
         XCTAssertFalse(titles.contains("Keep the screen on while awake"), "the screen switches moved to Settings")
     }
 
-    func testTheScreenSwitchesLiveInSettings() throws {
-        let savedAccess = ScreenPresence.hasAccessCheck
-        ScreenPresence.hasAccessCheck = { true }
-        defer { ScreenPresence.hasAccessCheck = savedAccess }
-        let screen = try XCTUnwrap(try submenu(SettingsMenu.item(target: target), titled: "Settings").items.first { $0.title == "Screen" }?.submenu)
-        XCTAssertEqual(screen.items.map(\.title), ["Keep the screen on while awake", "Look present at the screen",
-                                                  "Presence rhythm", "Turn the screen off when locked or closed"])
+    func testTheScreenSwitchesSitDirectlyInSettings() throws {
+        let titles = try submenu(SettingsMenu.item(target: target), titled: "Settings").items.map(\.title)
+        XCTAssertTrue(titles.contains("Keep the screen on while awake"))
+        XCTAssertTrue(titles.contains("Turn the screen off when locked or closed"))
+        XCTAssertFalse(titles.contains("Screen"), "two switches do not need a level of their own")
+        XCTAssertFalse(titles.contains("Look present at the screen"), "Look present has its own menu")
     }
 
-    func testFixAccessibilityRowAppearsOnlyWhenEnabledWithoutPermission() throws {
+    private func withLookPresent(on: Bool, hasAccess: Bool, needsRestart: Bool, _ body: () throws -> Void) rethrows {
         let key = "lookPresent"
         let defaults = UserDefaults.standard
         let savedPref = defaults.object(forKey: key)
@@ -131,70 +130,124 @@ final class MenuTests: XCTestCase {
             ScreenPresence.hasAccessCheck = savedAccess
             ScreenPresence.needsRestartCheck = savedRestart
         }
+        defaults.set(on, forKey: key)
+        ScreenPresence.hasAccessCheck = { hasAccess }
+        ScreenPresence.needsRestartCheck = { needsRestart }
+        try body()
+    }
 
-        defaults.set(true, forKey: key)
-        ScreenPresence.hasAccessCheck = { false }
-        ScreenPresence.needsRestartCheck = { false }
-        let missingSettings = SettingsMenu.item(target: target)
-        let missingScreen = try XCTUnwrap(try submenu(missingSettings, titled: "Settings").items.first { $0.title == "Screen" })
-        XCTAssertTrue(try XCTUnwrap(missingScreen.submenu).items.map(\.title).contains("Fix Accessibility permission…"))
-        if #available(macOS 14.4, *) {
-            XCTAssertEqual(missingSettings.value(forKey: "subtitle") as? String, "Needs Accessibility")
-            XCTAssertEqual(missingScreen.value(forKey: "subtitle") as? String, "Needs Accessibility")
+    private func lookPresentItem() -> NSMenuItem {
+        LookPresentMenu.item(power: PowerManager.shared, target: target)
+    }
+
+    func testLookPresentOffersEveryChoiceInOneList() throws {
+        try withLookPresent(on: false, hasAccess: true, needsRestart: false) {
+            let menu = try submenu(lookPresentItem(), titled: "Look present")
+            XCTAssertEqual(menu.items.filter { !$0.isSeparatorItem }.map(\.title), [
+                "Look present at the screen",
+                "MOVEMENT", "Steady (every 30 seconds)", "Random (every 20 to 60 seconds)",
+                "BREAKS", "No breaks (always green)", "Deep focus (45–90m work, 0–8m break)",
+                "Balanced (30–60m work, 3–15m break)", "Relaxed (20–40m work, 5–18m break)",
+            ])
+            XCTAssertFalse(menu.items.contains { $0.submenu != nil }, "every choice is open in this one list")
         }
+    }
 
-        defaults.set(false, forKey: key)
-        let offSettings = SettingsMenu.item(target: target)
-        let offScreen = try XCTUnwrap(try submenu(offSettings, titled: "Settings").items.first { $0.title == "Screen" })
-        XCTAssertFalse(try XCTUnwrap(offScreen.submenu).items.map(\.title).contains("Fix Accessibility permission…"))
-        if #available(macOS 14.4, *) {
-            XCTAssertNotEqual(offSettings.value(forKey: "subtitle") as? String, "Needs Accessibility")
-            XCTAssertNotEqual(offScreen.value(forKey: "subtitle") as? String, "Needs Accessibility")
+    func testFixAccessibilityRowAppearsOnlyWhenEnabledWithoutPermission() throws {
+        try withLookPresent(on: true, hasAccess: false, needsRestart: false) {
+            let item = lookPresentItem()
+            XCTAssertTrue(try XCTUnwrap(item.submenu).items.map(\.title).contains("Fix Accessibility permission…"))
+            if #available(macOS 14.4, *) { XCTAssertEqual(item.value(forKey: "subtitle") as? String, "Needs Accessibility") }
         }
-
-        defaults.set(true, forKey: key)
-        ScreenPresence.hasAccessCheck = { true }
-        let grantedSettings = SettingsMenu.item(target: target)
-        let grantedScreen = try XCTUnwrap(try submenu(grantedSettings, titled: "Settings").items.first { $0.title == "Screen" })
-        XCTAssertFalse(try XCTUnwrap(grantedScreen.submenu).items.map(\.title).contains("Fix Accessibility permission…"))
-        if #available(macOS 14.4, *) {
-            XCTAssertNotEqual(grantedSettings.value(forKey: "subtitle") as? String, "Needs Accessibility")
-            XCTAssertNotEqual(grantedScreen.value(forKey: "subtitle") as? String, "Needs Accessibility")
+        try withLookPresent(on: false, hasAccess: false, needsRestart: false) {
+            let item = lookPresentItem()
+            XCTAssertFalse(try XCTUnwrap(item.submenu).items.map(\.title).contains("Fix Accessibility permission…"))
+            if #available(macOS 14.4, *) { XCTAssertEqual(item.value(forKey: "subtitle") as? String, "Off") }
+        }
+        try withLookPresent(on: true, hasAccess: true, needsRestart: false) {
+            let item = lookPresentItem()
+            XCTAssertFalse(try XCTUnwrap(item.submenu).items.map(\.title).contains("Fix Accessibility permission…"))
+            if #available(macOS 14.4, *) { XCTAssertNotEqual(item.value(forKey: "subtitle") as? String, "Needs Accessibility") }
         }
     }
 
     func testRestartToApplyAccessibilityRowAppearsWhenRestartNeeded() throws {
-        let key = "lookPresent"
-        let defaults = UserDefaults.standard
-        let savedPref = defaults.object(forKey: key)
-        let savedAccess = ScreenPresence.hasAccessCheck
-        let savedRestart = ScreenPresence.needsRestartCheck
-        defer {
-            if let savedPref { defaults.set(savedPref, forKey: key) } else { defaults.removeObject(forKey: key) }
-            ScreenPresence.hasAccessCheck = savedAccess
-            ScreenPresence.needsRestartCheck = savedRestart
-        }
-
-        defaults.set(true, forKey: key)
-        ScreenPresence.hasAccessCheck = { false }
-        ScreenPresence.needsRestartCheck = { true }
-
-        let settings = SettingsMenu.item(target: target)
-        let screen = try XCTUnwrap(try submenu(settings, titled: "Settings").items.first { $0.title == "Screen" })
-        let items = try XCTUnwrap(screen.submenu).items.map(\.title)
-        XCTAssertTrue(items.contains("Restart to apply Accessibility…"))
-        XCTAssertFalse(items.contains("Fix Accessibility permission…"))
-        if #available(macOS 14.4, *) {
-            XCTAssertEqual(settings.value(forKey: "subtitle") as? String, "Restart to apply Accessibility")
-            XCTAssertEqual(screen.value(forKey: "subtitle") as? String, "Restart to apply Accessibility")
+        try withLookPresent(on: true, hasAccess: false, needsRestart: true) {
+            let item = lookPresentItem()
+            let titles = try XCTUnwrap(item.submenu).items.map(\.title)
+            XCTAssertTrue(titles.contains("Restart to apply Accessibility…"))
+            XCTAssertFalse(titles.contains("Fix Accessibility permission…"))
+            if #available(macOS 14.4, *) {
+                XCTAssertEqual(item.value(forKey: "subtitle") as? String, "Restart to apply Accessibility")
+            }
         }
     }
 
-    private let screenPath = "Settings > Screen > Look present at the screen"
+    private func status(on: Bool = true, access: Bool = true, restart: Bool = false, awake: Bool = true,
+                        screen: Bool = true, motion: PresenceMotion = .steady) -> LookPresentMenu.Status {
+        LookPresentMenu.status(on: on, hasAccess: access, needsRestart: restart, awake: awake, screenHeld: screen, motion: motion)
+    }
+
+    func testLookPresentSaysWhyItIsNotMoving() {
+        XCTAssertEqual(status(on: false, access: false).subtitle, "Off")
+        XCTAssertEqual(status(access: false, restart: true).subtitle, "Restart to apply Accessibility")
+        XCTAssertEqual(status(access: false).subtitle, "Needs Accessibility")
+        XCTAssertEqual(status(awake: false).subtitle, "Waiting for Keep awake")
+        XCTAssertEqual(status(awake: false).fix, .keepAwake)
+        XCTAssertEqual(status(screen: false).subtitle, "Needs the screen kept on")
+        XCTAssertEqual(status(screen: false).fix, .keepScreenOn)
+        XCTAssertEqual(status().subtitle, "Steady")
+        XCTAssertEqual(status(motion: .random).subtitle, "Random")
+        XCTAssertNil(status().fix)
+    }
+
+    // The longest chain of menus from this one down, as the titles of the items that open them.
+    private func deepestChain(of menu: NSMenu) -> [String] {
+        menu.items.compactMap { item in item.submenu.map { [item.title] + deepestChain(of: $0) } }
+            .max { $0.count < $1.count } ?? []
+    }
+
+    func testNoChoiceInTheMenuIsMoreThanThreeLevelsDeep() {
+        let menu = StatusMenuBuilder.build(power: PowerManager.shared, watch: UnattendedWatch(power: PowerManager.shared), target: target)
+        let chain = deepestChain(of: menu)
+        XCTAssertLessThanOrEqual(chain.count + 1, 3, "the menu, then \(chain.joined(separator: " > "))")
+    }
+
+    // The menu changes shape with the person's choices: energy set per power source, an update waiting, a sound of
+    // their own, and the sound menu on its own when lid and lock cannot be watched.
+    func testNoChoiceIsMoreThanThreeLevelsDeepWhateverTheMenuIsShowing() throws {
+        let defaults = UserDefaults.standard
+        let touched = defaults.dictionaryRepresentation().filter { $0.key.hasPrefix("update") || $0.key == EnergyProfile.separateKey }
+        let savedFolder = CustomSoundLibrary.folder
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("tbpk-depth-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        try Data().write(to: folder.appendingPathComponent("x.wav"))
+        defer {
+            CustomSoundLibrary.folder = savedFolder
+            try? FileManager.default.removeItem(at: folder)
+            defaults.dictionaryRepresentation().keys.filter { $0.hasPrefix("update") }.forEach(defaults.removeObject(forKey:))
+            defaults.removeObject(forKey: EnergyProfile.separateKey)
+            touched.forEach { defaults.set($1, forKey: $0) }
+        }
+        CustomSoundLibrary.folder = folder
+        EnergyProfile.setSeparate(true)
+        UpdateStore.record(found: AppVersion("99.0.0"), notes: "x",
+                           assets: (URL(string: "https://example.com/a.dmg")!, URL(string: "https://example.com/a.sha256")!))
+        let full = StatusMenuBuilder.build(power: PowerManager.shared, watch: UnattendedWatch(power: PowerManager.shared), target: target)
+        let soundAlone = NSMenu()
+        soundAlone.addItem(SoundMenu.item(target: target))
+        for (name, menu) in [("full menu", full), ("alert sound on its own", soundAlone)] {
+            let chain = deepestChain(of: menu)
+            XCTAssertLessThanOrEqual(chain.count + 1, 3, "\(name): the menu, then \(chain.joined(separator: " > "))")
+        }
+    }
+
+    private let screenPath = "Settings > Updates > Check for updates automatically"
 
     private func lit(_ path: String) -> NSMenu {
         let menu = NSMenu()
         menu.addItem(PowerRulesMenu.item(target: target))
+        menu.addItem(LookPresentMenu.item(power: PowerManager.shared, target: target))
         menu.addItem(SettingsMenu.item(target: target))
         MenuHighlight.path = MenuHighlight.steps(of: path)
         MenuHighlight.apply(to: menu)
@@ -205,8 +258,8 @@ final class MenuTests: XCTestCase {
         defer { MenuHighlight.path = [] }
         let menu = lit(screenPath)
         let settings = try XCTUnwrap(menu.items.first { $0.title == "Settings" })
-        let screen = try XCTUnwrap(settings.submenu?.items.first { $0.title == "Screen" })
-        let leaf = try XCTUnwrap(screen.submenu?.items.first { $0.title == "Look present at the screen" })
+        let screen = try XCTUnwrap(settings.submenu?.items.first { $0.title == "Updates" })
+        let leaf = try XCTUnwrap(screen.submenu?.items.first { $0.title == "Check for updates automatically" })
         XCTAssertEqual(settings.image?.accessibilityDescription, "Step 1")
         XCTAssertEqual(screen.image?.accessibilityDescription, "Step 2")
         XCTAssertEqual(leaf.image?.accessibilityDescription, "Step 3")
@@ -233,7 +286,7 @@ final class MenuTests: XCTestCase {
         XCTAssertNotNil(menu.items[0].view, "the guide card is the first row")
         XCTAssertTrue(menu.items[1].isSeparatorItem)
         XCTAssertEqual(MenuGuideRow.title(path: MenuHighlight.steps(of: screenPath)).string,
-                       "Look here\nSettings  \u{203A}  Screen  \u{203A}  Look present at the screen")
+                       "Look here\nSettings  \u{203A}  Updates  \u{203A}  Check for updates automatically")
         MenuHighlight.path = []
         let plain = NSMenu()
         plain.addItem(PowerRulesMenu.item(target: target))
@@ -246,7 +299,7 @@ final class MenuTests: XCTestCase {
         XCTAssertEqual((0...6).map { MenuGuideRow.activeStep(tick: $0, count: steps.count) }, [0, 1, 2, nil, 0, 1, 2])
         XCTAssertNil(MenuGuideRow.activeStep(tick: 5, count: 0), "an empty route has no step to light")
         XCTAssertEqual(MenuGuideRow.title(path: steps, active: 1).string,
-                       "Step 2 of 3\nSettings  \u{203A}  Screen  \u{203A}  Look present at the screen")
+                       "Step 2 of 3\nSettings  \u{203A}  Updates  \u{203A}  Check for updates automatically")
         let colours = (0..<3).map { step in
             MenuGuideRow.title(path: steps, active: 0).attribute(.foregroundColor, at: stepStart(step, in: steps), effectiveRange: nil) as? NSColor
         }
@@ -267,7 +320,8 @@ final class MenuTests: XCTestCase {
 
     func testSettingsHoldTheSwitchesTheScreenChoicesAndNoQuitChoice() throws {
         let titles = try submenu(SettingsMenu.item(target: target), titled: "Settings").items.map(\.title)
-        XCTAssertEqual(titles, ["Show countdown", "Leaf motion", "Leaf colour", "Screen", "Start at Login", "Updates"])
+        XCTAssertEqual(titles, ["Show countdown", "Leaf motion", "Leaf colour", "Keep the screen on while awake",
+                                "Turn the screen off when locked or closed", "Start at Login", "Updates"])
     }
 
     func testAWaitingUpdateIsTaggedNewAndNothingElseIs() throws {

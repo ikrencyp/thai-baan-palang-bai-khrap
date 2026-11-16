@@ -44,32 +44,38 @@ final class LeafColorTests: XCTestCase {
         XCTAssertEqual(LeafColor.stored(.battery, in: defaults), .batteryStandard)
     }
 
-    func testEachSlotHasItsOwnMenuAndTheyTickTheStoredChoice() throws {
+    // The rows under one slot header: up to the next header or the closing note, which are the disabled rows.
+    private func section(_ menu: NSMenu, _ header: String) throws -> [NSMenuItem] {
+        let start = try XCTUnwrap(menu.items.firstIndex { $0.title == header }) + 1
+        let end = menu.items[start...].firstIndex { !$0.isEnabled && !$0.isSeparatorItem } ?? menu.items.count
+        return Array(menu.items[start ..< end])
+    }
+
+    func testEachSlotHasItsOwnSectionAndTheyTickTheStoredChoice() throws {
         let parent = LeafColorMenu.item(target: StubMenuTarget(), charger: LeafColor(rgb: 0xB06CFF), battery: .batteryStandard)
         XCTAssertEqual(parent.title, "Leaf colour")
-        let slots = try XCTUnwrap(parent.submenu)
-        XCTAssertEqual(slots.items.map(\.title).prefix(2), ["On the charger", "On battery"])
+        let list = try XCTUnwrap(parent.submenu)
+        XCTAssertFalse(list.items.contains { $0.submenu != nil }, "both slots are open in one list")
 
-        let charger = try XCTUnwrap(slots.items.first { $0.title == "On the charger" }?.submenu)
-        XCTAssertEqual(charger.items.filter { $0.state == .on }.map(\.title), ["Purple"])
-        XCTAssertTrue(charger.items.contains { $0.title == "Custom colour..." })
+        let charger = try section(list, "ON THE CHARGER")
+        XCTAssertEqual(charger.filter { $0.state == .on }.map(\.title), ["Purple"])
+        XCTAssertTrue(charger.contains { $0.title == "Custom colour..." })
 
-        let battery = try XCTUnwrap(slots.items.first { $0.title == "On battery" }?.submenu)
-        XCTAssertEqual(battery.items.filter { $0.state == .on }.map(\.title), ["Red"])
+        let battery = try section(list, "ON BATTERY")
+        XCTAssertEqual(battery.filter { $0.state == .on }.map(\.title), ["Red"])
 
         let custom = try XCTUnwrap(LeafColorMenu.item(target: StubMenuTarget(), charger: .standard,
                                                       battery: LeafColor(rgb: 0x123456)).submenu)
-        let batteryCustom = try XCTUnwrap(custom.items.first { $0.title == "On battery" }?.submenu)
-        XCTAssertEqual(batteryCustom.items.filter { $0.state == .on }.map(\.title), ["Custom #123456..."])
+        XCTAssertEqual(try section(custom, "ON BATTERY").filter { $0.state == .on }.map(\.title), ["Custom #123456..."])
     }
 
     func testAColourRowCarriesItsSlotAndColour() throws {
         let parent = LeafColorMenu.item(target: StubMenuTarget(), charger: .standard, battery: .batteryStandard)
-        let charger = try XCTUnwrap(parent.submenu?.items.first { $0.title == "On the charger" }?.submenu)
-        let row = try XCTUnwrap(charger.items.first { $0.title == "Purple" })
+        let charger = try section(try XCTUnwrap(parent.submenu), "ON THE CHARGER")
+        let row = try XCTUnwrap(charger.first { $0.title == "Purple" })
         XCTAssertEqual(row.representedObject as? LeafColor.Pick,
                        LeafColor.Pick(slot: .charger, color: LeafColor(rgb: 0xB06CFF)))
-        let custom = try XCTUnwrap(charger.items.first { $0.title == "Custom colour..." })
+        let custom = try XCTUnwrap(charger.first { $0.title == "Custom colour..." })
         XCTAssertEqual(custom.representedObject as? LeafColor.Slot, .charger)
     }
 

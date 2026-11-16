@@ -48,7 +48,7 @@ enum MenuHighlight {
         return image
     }
 
-    // "Settings > Screen > Look present at the screen" -> the three names.
+    // "Settings > Leaf colour > On the charger" -> the three names.
     nonisolated static func steps(of findIt: String) -> [String] {
         findIt.components(separatedBy: " > ").map { $0.trimmingCharacters(in: .whitespaces) }
     }

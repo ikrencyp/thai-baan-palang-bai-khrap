@@ -30,7 +30,7 @@ struct HelpTopic: Identifiable, Equatable {
                   detail: "Energy use sits here too: its choices stay open, so you see the Right now line change as you pick."),
         HelpTopic(id: "present", symbol: "display", title: "Look present at the screen",
                   summary: "Keeps the Mac from looking idle while Keep awake is on, so you do not show as away when you step out.",
-                  detail: "Settings > Screen. Off by default. While it is on and the Mac is held awake, a tiny no-move input goes out every minute; macOS asks once for the Accessibility permission to allow that. Switch it off and the Mac goes back to counting idle time as before."),
+                  detail: "Look present in the menu. Off by default. While it is on and the Mac is held awake, the pointer steps a few pixels and straight back (or taps an unused key near the menu bar and screen edges), steadily every 30 seconds or at random gaps of 20 to 60 seconds, as you choose; macOS asks once for the Accessibility permission to allow that. Switch it off and the Mac goes back to counting idle time as before."),
         HelpTopic(id: "energy", symbol: "bolt", title: "Energy use",
                   summary: "Automatic, Full performance or Power saver, in Power rules.",
                   detail: "Automatic follows macOS: a calm heartbeat on the charger and on battery, a still leaf with Reduce Motion on. Pick one choice for both power sources, or switch on Set charger and battery separately to pick one for each. Nothing is drawn while the display is asleep."),

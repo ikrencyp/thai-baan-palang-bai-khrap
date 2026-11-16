@@ -16,6 +16,12 @@ enum MenuParts {
         return item
     }
 
+    static func toggle(_ title: String, on: Bool, _ action: Selector, _ target: StatusMenuTarget) -> NSMenuItem {
+        let item = MenuParts.action(title, symbol: nil, action, target)
+        item.state = on ? .on : .off
+        return item
+    }
+
     static func action(_ title: String, symbol: String?, _ selector: Selector, _ target: StatusMenuTarget) -> NSMenuItem {
         let item = NSMenuItem(title: title, action: selector, keyEquivalent: "")
         item.target = target

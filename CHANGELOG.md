@@ -2,6 +2,9 @@
 
 Each release gets a `## x.y.z` heading and a few short `- ` lines. The update dialog shows the first four.
 
+## Unreleased
+- Look present at the screen now includes Presence rhythm presets (Continuous, Deep focus, Balanced, Relaxed) to alternate active and resting pauses naturally
+
 ## 1.3.9
 - General bug fixes so the app runs more steadily
 - The update progress window no longer shows 0% before download bytes arrive or after the download finishes while the update is preparing and installing

@@ -300,6 +300,13 @@ final class StatusItemController: NSObject, StatusMenuTarget {
         governor?.evaluate()
     }
 
+    @objc func presenceRhythmClicked(_ item: NSMenuItem) {
+        guard let raw = item.representedObject as? String, let rhythm = PresenceRhythm(rawValue: raw) else { return }
+        rhythm.store()
+        governor?.evaluate()
+        render()
+    }
+
     private func presentRestartForAccessGuide() {
         let alert = NSAlert()
         alert.alertStyle = .informational

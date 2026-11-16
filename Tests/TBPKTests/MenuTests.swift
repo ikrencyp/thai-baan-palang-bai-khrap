@@ -117,7 +117,7 @@ final class MenuTests: XCTestCase {
         defer { ScreenPresence.hasAccessCheck = savedAccess }
         let screen = try XCTUnwrap(try submenu(SettingsMenu.item(target: target), titled: "Settings").items.first { $0.title == "Screen" }?.submenu)
         XCTAssertEqual(screen.items.map(\.title), ["Keep the screen on while awake", "Look present at the screen",
-                                                  "Turn the screen off when locked or closed"])
+                                                  "Presence rhythm", "Turn the screen off when locked or closed"])
     }
 
     func testFixAccessibilityRowAppearsOnlyWhenEnabledWithoutPermission() throws {

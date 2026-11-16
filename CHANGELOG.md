@@ -2,7 +2,7 @@
 
 Each release gets a `## x.y.z` heading and a few short `- ` lines. The update dialog shows the first four.
 
-## Unreleased
+## 1.4.0
 - Look present at the screen now includes Presence rhythm presets (Continuous, Deep focus, Balanced, Relaxed) to alternate active and resting pauses naturally
 
 ## 1.3.9

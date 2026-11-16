@@ -38,6 +38,7 @@ enum SettingsMenu {
                                #selector(StatusMenuTarget.keepScreenClicked), target))
         submenu.addItem(toggle("Look present at the screen", on: StatusPreferences.lookPresent,
                                #selector(StatusMenuTarget.lookPresentClicked), target))
+        submenu.addItem(presenceRhythm(target: target))
         submenu.addItem(toggle("Turn the screen off when locked or closed", on: StatusPreferences.darkenWhenClosed,
                                #selector(StatusMenuTarget.darkenClicked), target))
         if needsLookPresentRestart {
@@ -51,6 +52,17 @@ enum SettingsMenu {
         }
         return MenuParts.parent("Screen", symbol: "display",
                                 subtitle: lookPresentSubtitle, submenu: submenu)
+    }
+
+    private static func presenceRhythm(target: StatusMenuTarget) -> NSMenuItem {
+        let submenu = NSMenu()
+        let stored = PresenceRhythm.stored
+        for choice in PresenceRhythm.allCases {
+            submenu.addItem(MenuParts.radio(choice.label, choice.rawValue, choice == stored,
+                                            #selector(StatusMenuTarget.presenceRhythmClicked(_:)), target))
+        }
+        return MenuParts.parent("Presence rhythm", symbol: "waveform.path",
+                                subtitle: stored.shortLabel, submenu: submenu)
     }
 
     // The same three switches as macOS Software Update: each one only counts while the one above it is on.

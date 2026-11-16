@@ -70,10 +70,37 @@ final class ScreenPresence {
         }
     }
 
+    enum Phase: Equatable {
+        case active(until: Date)
+        case resting(until: Date)
+    }
+
     private var timer: DispatchSourceTimer?
     private var activity: NSObjectProtocol?
     private var askedForAccess = false
     private var lastOutcome = ""
+    private var currentPhase: Phase?
+    private var lastRhythm: PresenceRhythm?
+
+    nonisolated static func nextPhase(
+        current: Phase?,
+        rhythm: PresenceRhythm,
+        now: Date,
+        activeDuration: TimeInterval? = nil,
+        restingDuration: TimeInterval? = nil
+    ) -> (phase: Phase?, shouldPulse: Bool) {
+        guard rhythm != .continuous else { return (nil, true) }
+        let nextActive = now.addingTimeInterval(activeDuration ?? TimeInterval.random(in: rhythm.activeRange))
+        guard let current else { return (.active(until: nextActive), true) }
+        switch current {
+        case .active(let until):
+            guard now >= until else { return (current, true) }
+            let rest = restingDuration ?? TimeInterval.random(in: rhythm.restingRange)
+            return rest > 0 ? (.resting(until: now.addingTimeInterval(rest)), false) : (.active(until: nextActive), true)
+        case .resting(let until):
+            return now < until ? (current, false) : (.active(until: nextActive), true)
+        }
+    }
 
     func setActive(_ active: Bool) {
         guard active else {
@@ -83,6 +110,8 @@ final class ScreenPresence {
             activity = nil
             askedForAccess = false
             lastOutcome = ""
+            currentPhase = nil
+            lastRhythm = nil
             return
         }
         guard timer == nil else { return }
@@ -109,6 +138,21 @@ final class ScreenPresence {
     private func pulse() {
         guard Self.hasAccess else {
             handleMissingAccess()
+            return
+        }
+        let rhythm = PresenceRhythm.stored
+        if lastRhythm != rhythm {
+            currentPhase = nil
+            lastRhythm = rhythm
+        }
+        let now = Date()
+        let evaluated = Self.nextPhase(current: currentPhase, rhythm: rhythm, now: now)
+        currentPhase = evaluated.phase
+        guard evaluated.shouldPulse else {
+            if case .resting(let until) = evaluated.phase {
+                let left = max(0, Int(until.timeIntervalSince(now)))
+                record("resting (\(left)s left)")
+            }
             return
         }
         let snapshot = UnattendedSnapshot.read(buzzing: true)
